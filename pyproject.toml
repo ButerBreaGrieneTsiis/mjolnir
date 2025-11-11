@@ -1,0 +1,9 @@
+[project]
+name = "mjolnir"
+version = "0.1.0-dev"
+authors = [{name = "Tom Scheeper",email = "tomscheeper@gmail.com"}]
+
+dependencies = [
+    "grienetsiis @ git+https://github.com/ButerBreaGrieneTsiis/grienetsiis.git@v1.5.2",
+    "streamlit>=1.44.1",
+]
