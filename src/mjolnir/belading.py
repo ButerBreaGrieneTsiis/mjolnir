@@ -1,47 +1,33 @@
+from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from typing import Callable, List
 
 from .enums import HalterType
-from .gegevensdrager import BasisType, DatabankLijst
+from .register import GeregistreerdObject, Register
 
 
-class Halterschijf(BasisType):
+@dataclass
+class Halterschijf(GeregistreerdObject):
     
-    def __init__(
-        self,
-        massa: float,
-        diameter: int,
-        aantal: int,
-        breedte: int,
-        ) -> "Halterschijf":
-        
-        self.massa = massa
-        self.diameter = diameter
-        self.aantal = aantal
-        self.breedte = breedte
-
-class Halterschijven(DatabankLijst):
+    massa: float
+    diameter: int
+    aantal: int
+    breedte: int
+    
+class Halterschijven(Register):
     
     BESTANDSNAAM: str = "halterschijven"
-    DECODER_FUNCTIE: Callable = Halterschijf.van_json
+    TYPE: type = Halterschijf
 
-class Halterstang(BasisType):
+@dataclass
+class Halterstang(GeregistreerdObject):
     
-    def __init__(
-        self,
-        naam: str,
-        halter_type: HalterType,
-        massa: float,
-        diameter: int,
-        opname_breedte: int,
-        ) -> "Halterstang":
-        
-        self.naam = naam
-        self.halter_type = halter_type
-        self.massa = massa
-        self.diameter = diameter
-        self.opname_breedte = opname_breedte
+    naam: str
+    halter_type: HalterType
+    massa: float
+    diameter: int
+    opname_breedte: int
     
     def laden(
         self,
@@ -49,7 +35,7 @@ class Halterstang(BasisType):
         halterschijven: List[Halterschijf] = None,
         ) -> "Halter":
         
-        halterschijven = Halterschijven.openen() if halterschijven is None else halterschijven
+        halterschijven = Halterschijven.openen().lijst if halterschijven is None else halterschijven
         halterschijven.sort(key = lambda x: x.massa, reverse = True)
         
         massa_per_kant_nodig = (haltermassa - self.massa)/2
@@ -74,11 +60,10 @@ class Halterstang(BasisType):
             halterschijven_rechts,
             )
 
-class Halterstangen(DatabankLijst):
+class Halterstangen(Register):
     
     BESTANDSNAAM: str = "halterstangen"
-    DECODER_FUNCTIE: Callable = Halterstang.van_json
-    ENCODER_FUNCTIE: Callable = Halterstang.naar_json
+    TYPE: type = Halterstang
 
 class Halter:
     
@@ -92,6 +77,11 @@ class Halter:
         self.halterstang = halterstang
         self.halterschijven_links = halterschijven_links
         self.halterschijven_rechts = halterschijven_rechts
+    
+    def __repr__(self):
+        links = "".join([f"[{halterschijf.massa}]" for halterschijf in sorted(self.halterschijven_links, key = lambda x: x.massa)])
+        rechts = "".join([f"[{halterschijf.massa}]" for halterschijf in self.halterschijven_rechts])
+        return f"{links}---[{self.halterstang.naam}]---{rechts}"
     
     @property
     def massa(self) -> float:
