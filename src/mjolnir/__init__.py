@@ -1,1 +1,1 @@
-# from .belading import Halterschijven, Halterstangen
+from .belading import Halterschijven, Halterstangen
