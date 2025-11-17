@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from functools import cache
-from pathlib import Path
-from typing import Callable, List
+from typing import List
 
 from .enums import HalterType
 from .register import GeregistreerdObject, Register
