@@ -1,7 +1,5 @@
 from typing import Dict, List
 
-from .oefening import 
-
 
 class TrainingsDag:
     
