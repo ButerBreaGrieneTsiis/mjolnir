@@ -45,6 +45,9 @@ class Sjabloon(GeregistreerdObject):
     set_type: SetGroepType
     setgroepen: Dict[str, List[str]] = None
     
+    def __repr__(self) -> str:
+        return self.naam
+    
     @classmethod
     def nieuw(
         cls,
@@ -144,12 +147,13 @@ class Sjabloon(GeregistreerdObject):
                 aantal_sets = f"{invoer_validatie(
                     beschrijving = "aantal sets",
                     type = int,
+                    bereik = (1, 10),
                     )}"
                 
-                if aantal_sets == 1:
-                    set = f"{aantal_sets}×{repetities}{massa}"
-                else:
+                if aantal_sets == "1":
                     set = f"{repetities}{massa}"
+                else:
+                    set = f"{aantal_sets}×{repetities}{massa}"
                 
                 sets.append(set)
             
