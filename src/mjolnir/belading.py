@@ -13,6 +13,9 @@ class Halterschijf(GeregistreerdObject):
     aantal: int
     breedte: int
     
+    def __repr__(self) -> str:
+        return f"halterschijf {self.massa} kg Ø{self.diameter}"
+    
 class Halterschijven(Register):
     
     BESTANDSNAAM: str = "halterschijven"
@@ -26,6 +29,9 @@ class Halterstang(GeregistreerdObject):
     massa: float
     diameter: int
     opname_breedte: int
+    
+    def __repr__(self) -> str:
+        return f"halterstang \"{self.naam}\" van type \"{self.halter_type.value}\""
     
     def laden(
         self,
