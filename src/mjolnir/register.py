@@ -142,7 +142,7 @@ class Register(dict):
             keuzes = {
                 f"nieuw {self.TYPE.__name__.lower()}": "nieuw",
             } | {
-                uuid: geregistreerd_object for uuid, geregistreerd_object in self.items()
+                f"{geregistreerd_object}": geregistreerd_object for uuid, geregistreerd_object in self.items()
                 },
             )
         
