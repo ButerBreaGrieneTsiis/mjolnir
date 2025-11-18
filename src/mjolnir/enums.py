@@ -7,23 +7,42 @@ class HalterType(Enum):
     EZ_CURL = "ez curl bar"
     DUMBELL = "dumbell"
 
+class OefeningBarbell(Enum):
+    
+    PRESS = "overhead press"
+    SQUAT = "squat"
+    BENCH = "bench press"
+    DEADLIFT = "deadlift"
+
 class OefeningType(Enum):
     
     LICHAAMSGEWICHT = 1
     GEWICHT = 2
-    HALTER = 3
+    BARBELL = OefeningBarbell
     EZ_CURL = 4
+    DUMBELL = 5
 
-class OefeningEnum(Enum):
+class RepetitieType(Enum):
     
-    PRESS = ("press", OefeningType.HALTER)
-    SQUAT = ("squat", OefeningType.HALTER)
-    BENCH = ("bench", OefeningType.HALTER)
-    DEADLIFT = ("deadlift", OefeningType.HALTER)
+    AANTAL = "aantal"
+    BEREIK = "bereik"
+    AMRAP = "amrap"
+    BEREIK_AMRAP = "amrap met bereik"
+    VRIJ = "vrij"
+
+class SetType(Enum):
     
-    def oefening_type(self) -> OefeningType:
-        return self.value[1]
+    GEWICHTLOOS = "gewichtloos"
+    GEWICHT = "gewicht"
+    PERCENTAGE = "percentage"
+
+class SetGroepType(Enum):
+    
+    WARM_UP = "warm-up sets"
+    HOOFD = "hoofdsets"
+    AANVULLEND = "aanvullende sets"
 
 ENUM_DICT = {
     "HalterType": HalterType,
+    "SetGroepType": SetGroepType,
     }
