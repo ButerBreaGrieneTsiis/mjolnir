@@ -3,10 +3,7 @@ from enum import Enum
 from typing import List, Union
 
 
-class Amrap:
-    
-    def __repr__(self):
-        return "AMRAP"
+
 
 
 
