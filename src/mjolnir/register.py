@@ -24,6 +24,34 @@ class GeregistreerdObject:
         
         return cls(**dict)
     
+    def naar_json(self):
+        
+        dict_naar_json = {}
+        
+        for veld_sleutel, veld_waarde in self.__dict__.items():
+            print(veld_sleutel, veld_waarde)
+            # alle velden uitsluiten die standaardwaardes hebben; nutteloos om op te slaan
+            if veld_waarde is None:
+                continue
+            elif isinstance(veld_waarde, bool) and not veld_waarde:
+                continue
+            elif isinstance(veld_waarde, list) and len(veld_waarde) == 0:
+                continue
+            elif isinstance(veld_waarde, dict) and not bool(veld_waarde):
+                continue
+            elif isinstance(veld_waarde, str) and veld_waarde == "":
+                continue
+            elif isinstance(veld_waarde, int) and veld_waarde == 0:
+                continue
+            elif veld_sleutel == "uuid":
+                continue
+            elif isinstance(veld_waarde, dt.date):
+                dict_naar_json[veld_sleutel] = veld_waarde.strftime("%Y-%m-%d")
+            else:
+                dict_naar_json[veld_sleutel] = veld_waarde
+        print(dict_naar_json)
+        return dict_naar_json
+    
     @classmethod
     def nieuw(
         cls,
@@ -32,17 +60,20 @@ class GeregistreerdObject:
         
         dict = {}
         
-        for veld, type in velden.items():
-            if issubclass(type, Enum):
+        for veld, _type in velden.items():
+            
+            if isinstance(_type, type) and issubclass(_type, Enum):
                 waarde = invoer_kiezen(
                     beschrijving = veld,
-                    keuzes = {choice.value: choice for choice in type},
+                    keuzes = {enum.value: enum for enum in _type},
                     )
-            else:
+            elif _type in [int, float, str]:
                 waarde = invoer_validatie(
                     beschrijving = veld,
-                    type = type,
+                    type = _type,
                     )
+            else:
+                continue
             dict[veld] = waarde
         
         return cls(**dict)
@@ -55,7 +86,7 @@ class Register(dict):
     DECODER_FUNCTIE: str = "van_json"
     DECODER_LIJST: List[Decoder] = None
     
-    ENCODER_FUNCTIE: Callable = None
+    ENCODER_FUNCTIE: str = "naar_json"
     ENCODER_DICT: Dict[str, str] = None
     
     @classmethod
@@ -83,7 +114,7 @@ class Register(dict):
         opslaan_json(
             self,
             bestandspad,
-            encoder_functie = getattr(self, "ENCODER_FUNCTIE"),
+            encoder_functie = getattr(self.TYPE, self.ENCODER_FUNCTIE),
             encoder_dict = self.ENCODER_DICT,
             enum_dict = ENUM_DICT,
             )
@@ -93,7 +124,31 @@ class Register(dict):
         return list(self.values())
     
     def nieuw(self):
+        
+        print(f"maak een nieuw {self.TYPE.__name__.lower()}")
+        
         basis_type = self.TYPE.nieuw(self.TYPE.__annotations__)
-        id = str(uuid4())
-        self[id] = basis_type
-        return id
+        uuid = str(uuid4())
+        
+        basis_type.uuid = uuid
+        self[uuid] = basis_type
+        
+        return basis_type
+    
+    def kiezen(self) -> type[GeregistreerdObject]:
+        
+        keuze_optie = invoer_kiezen(
+            beschrijving = f"{self.TYPE.__name__.lower()}",
+            keuzes = {
+                f"nieuw {self.TYPE.__name__.lower()}": "nieuw",
+            } | {
+                uuid: geregistreerd_object for uuid, geregistreerd_object in self.items()
+                },
+            )
+        
+        if keuze_optie == "nieuw":
+            basis_type = self.nieuw()
+        else:
+            basis_type = keuze_optie
+        
+        return basis_type
