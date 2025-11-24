@@ -1,49 +1,19 @@
 from dataclasses import dataclass, field
+import datetime as dt
 from typing import Dict, List
 
-from .enums import HalterType, OefeningType, RepetitieType, SetType, SetGroepType
+from .enums import HalterType, OefeningType, RepetitieType, GewichtType, SetType, Oefening
 from .register import GeregistreerdObject, Register
 
 from grienetsiis import Decoder, openen_json, opslaan_json, invoer_validatie, invoer_kiezen
 
 
-# @dataclass
-# class Set:
-    
-#     repetities: int = field(default = 0)
-#     rep_type: RepetitieType = field(default = RepetitieType.AANTAL)
-#     set_type: SetType = field(default = SetType.GEWICHTLOOS)
-#     massa: float = field(default = 0.0)
-#     percentage: int  = field(default = 0)
-    
-#     def __repr__(self) -> str:
-#         if self.set_type is SetType.GEWICHTLOOS:
-#             return f"{self.repetities}"
-#         elif self.set_type is SetType.GEWICHT:
-#             return f"{self.repetities}@{self.massa}"
-#         else:
-#             return f"{self.repetities}@{self.percentage}%"
-
-# @dataclass
-# class Setgroep(GeregistreerdObject):
-    
-#     sets: List[Set]
-    
-#     @property
-#     def naam(self):
-#         return " ".join([set.__repr__() for set in self.sets])
-
-# class Setgroepen(Register):
-    
-#     BESTANDSNAAM: str = "setgroepen"
-#     TYPE: type = Setgroep
-
 @dataclass
 class Sjabloon(GeregistreerdObject):
     
     naam: str
-    set_type: SetGroepType
-    setgroepen: Dict[str, List[str]] = None
+    set_type: SetType
+    sets: Dict[str, List[str]] = None
     
     def __repr__(self) -> str:
         return self.naam
@@ -56,27 +26,9 @@ class Sjabloon(GeregistreerdObject):
         
         cls = super().nieuw(velden)
         
-        set_type = invoer_kiezen(
-            beschrijving = "set type",
-            keuzes = {set_type.value: set_type for set_type in SetType},
-            )
-        
-        week_optie = invoer_kiezen(
-            beschrijving = "hoeveel weken heeft dit sjabloon?",
-            keuzes = {
-                "1 week": 1,
-                "2 weken": 2,
-                "3 weken": 3,
-                },
-            )
-        
-        setgroepen = {}
-        
-        for week in range(1, week_optie + 1):
+        def sets_maken() -> List[str]:
             
             sets = []
-            
-            print(f"\nkies de sets voor week {week}")
             
             while True:
                 
@@ -129,9 +81,9 @@ class Sjabloon(GeregistreerdObject):
                     else:
                         repetities = f"{repetities_minimaal}-{repetities_maximaal}+"
                 
-                if set_type == SetType.GEWICHTLOOS:
+                if set_type == GewichtType.GEWICHTLOOS:
                     massa = ""
-                elif set_type == SetType.GEWICHT:
+                elif set_type == GewichtType.GEWICHT:
                     massa = f"@{invoer_validatie(
                         beschrijving = "hoeveel massa",
                         type = float,
@@ -153,13 +105,41 @@ class Sjabloon(GeregistreerdObject):
                 if aantal_sets == "1":
                     set = f"{repetities}{massa}"
                 else:
-                    set = f"{aantal_sets}×{repetities}{massa}"
+                    set = f"{aantal_sets}x{repetities}{massa}"
                 
                 sets.append(set)
-            
-            setgroepen[f"{week}"] = sets
+                
+            return sets
         
-        cls.setgroepen = setgroepen
+        set_type = invoer_kiezen(
+            beschrijving = "set type",
+            keuzes = {set_type.value: set_type for set_type in GewichtType},
+            )
+        
+        week_optie = invoer_kiezen(
+            beschrijving = "hoeveel weken heeft dit sjabloon?",
+            keuzes = {
+                "weekonafhankelijk": 0,
+                "1 week": 1,
+                "2 weken": 2,
+                "3 weken": 3,
+                },
+            )
+        
+        sets_per_week = {}
+        
+        if week_optie == 0:
+            print(f"\nkies de sets voor elke week")
+            sets = sets_maken()
+            sets_per_week[f"week {week_optie}"] = sets
+        else:
+            for week in range(1, week_optie + 1):
+                
+                print(f"\nkies de sets voor week {week}")
+                sets = sets_maken()
+                sets_per_week[f"week {week}"] = sets
+        
+        cls.sets = sets_per_week
         
         return cls
 
@@ -167,6 +147,154 @@ class Sjablonen(Register):
     
     BESTANDSNAAM: str = "sjablonen"
     TYPE: type = Sjabloon
+
+# @dataclass
+# class SchemaDag(GeregistreerdObject):
+    
+#     week: int
+#     dag: int
+#     oefeningen: List
+#     afgerond: bool = False
+
+@dataclass
+class SchemaCyclus(GeregistreerdObject):
+    
+    naam: str
+    weken: int
+    dagen: int
+    trainingsschema: Dict[int, Dict[str, List[Sjabloon]]] = None
+    trainingsgewichten: List[Dict[str, Oefening | float]] = None
+    datum_start: dt.date = None # wordt veranderd bij als één Schemadag.afgerond = True
+    datum_eind: dt.date = None # wordt veranderd bij alle Schemadag.afgerond = True
+    afgerond: bool = False
+    huidig: bool = False
+    
+    @classmethod
+    def nieuw(
+        cls,
+        velden,
+        ) -> "SchemaCyclus":
+        
+        cls = super().nieuw(velden)
+        
+        sjablonen = Sjablonen.openen()
+        
+        trainingsschema = {}
+        trainingsgewichten = []
+        
+        for dag in range(1, cls.dagen + 1):
+            
+            trainingsschema[f"dag {dag}"] = []
+            
+            print(f"\ntoevoegen oefeningen voor dag {dag}")
+            
+            while True:
+                
+                if len(trainingsschema[f"dag {dag}"]) > 0:
+                    print(f"\nschema voor dag {dag}")
+                    for oefening_sjablonen in trainingsschema[f"dag {dag}"]:
+                        print(f"  oefening \"{oefening_sjablonen["oefening"].value}\"")
+                        for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
+                            print(f"    {sjablonen[sjabloon_uuid]}")
+                    
+                    if invoer_kiezen(
+                        beschrijving = "nog een oefening toevoegen?",
+                        keuzes = {"ja": False, "nee": True},
+                        kies_een = False,
+                        ):
+                        
+                        break
+                
+                oefening_type = invoer_kiezen(
+                    beschrijving = "oefeningstype",
+                    keuzes = {enum.value[0]: enum.value[1] for enum in OefeningType},
+                    )
+                
+                oefening = invoer_kiezen(
+                    beschrijving = "oefening",
+                    keuzes = {enum.value: enum for enum in oefening_type},
+                    )
+                
+                print(f"\n>>> oefening \"{oefening.value}\" gekozen")
+                
+                oefening_sjablonen = {
+                    "oefening": oefening,
+                    "sjablonen": [],
+                    }
+                
+                while True:
+                    
+                    if len(oefening_sjablonen["sjablonen"]) > 0:
+                        print(f"\nsjablonen voor {oefening.value}")
+                        for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
+                            print(f"    {sjablonen[sjabloon_uuid]}")
+                        
+                        if invoer_kiezen(
+                            beschrijving = "nog een sjabloon toevoegen?",
+                            keuzes = {"ja": False, "nee": True},
+                            kies_een = False,
+                            ):
+                            
+                            break
+                    
+                    sjabloon_uuid = sjablonen.kiezen()
+                    # enkel sjablonen kiezen met gelijk aantal weken
+                    
+                    oefening_sjablonen["sjablonen"].append(sjabloon_uuid)
+                    
+                    if any(["%" in set for week in sjablonen[sjabloon_uuid].sets.values() for set in week]):
+                        
+                        if not any([oefening == trainingsgewicht["oefening"] for trainingsgewicht in trainingsgewichten]):
+                        
+                            print(f"\ntrainingspercentage nodig voor oefening \"{oefening.value}\"")
+                            
+                            trainingsgewicht = invoer_validatie(
+                                f"trainingsgewicht",
+                                type = float,
+                                )
+                            
+                            trainingsgewichten.append({
+                                "oefening": oefening,
+                                "trainingsgewicht": trainingsgewicht,
+                                })
+                
+                trainingsschema[f"dag {dag}"].append(oefening_sjablonen)
+        
+        sjablonen.opslaan()
+        
+        cls.trainingsschema = trainingsschema
+        cls.trainingsgewichten = trainingsgewichten
+        
+        return cls
+        
+        # bool: zijn de oefeningen gelijk per week (voor nu enkel True)
+        
+        # voeg oefeningen toe voor de dagen:
+            # dag 1:
+                # oefening 1
+                    # kies een oefening -> OefeningType -> Oefening (bijv. OefeningType.BARBELL -> OefeningBarbell.PRESS)
+                    # sjablonen kiezen (enkel sjablonen tonen met overeenkomstig aantal weken)
+                        #   sjabloon 1
+                        #   sjabloon 2
+                        #   sjabloon :
+                    # volgende oefening?
+                # oefening 2
+                # oefening : (hoe omgaan bij bijv. sit-ups met selecteren sjabloon als de reps/sets minder strak bepaald zijn?)
+                # volgende dag?
+            # dag 2
+            # dag :
+        
+        # opstellen SchemaDag voor elke dag
+        
+        # het paneel opent in principe het SchemaCyclus object 
+        # en pakt dan de eerstvolgende SchemaDag die isafgerond = False
+        
+class SchemaCycli(Register):
+    
+    BESTANDSNAAM: str = "schema"
+    TYPE: type = SchemaCyclus
+    
+    
 
 # @dataclass
 # class Oefening:
