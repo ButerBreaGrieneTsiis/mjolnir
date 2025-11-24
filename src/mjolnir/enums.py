@@ -7,20 +7,61 @@ class HalterType(Enum):
     EZ_CURL = "ez curl bar"
     DUMBELL = "dumbell"
 
-class OefeningBarbell(Enum):
+class Spiergroep(Enum):
+    
+    BORST = "borst"
+    BOVENRUG = "bovenrug"
+    SCHOUDERS = "schouder"
+    BICEPS = "biceps"
+    TRICEPS = "triceps"
+    ONDERARMEN = "onderarmen"
+    BUIKSPIEREN = "buikspieren"
+    ONDERRUG = "onderrug"
+    BILLEN = "billen"
+    QUADRICEPS = "quadriceps"
+    HAMSTRINGS = "hamstrings"
+    KUITEN = "kuiten"
+
+class Oefening(Enum):
+    pass
+
+class OefeningLichaamsgewicht(Oefening):
+    
+    PUSH_UPS = "push-up"
+    BENCH_DIPS = "bench dips"
+    SIT_UPS = "sit-ups"
+    PULL_UPS = "pull-up"
+    CHIN_UPS = "chin-up"
+
+class OefeningGewicht(Oefening):
+    
+    SIT_UPS_GEWICHT = "sit-ups met gewicht"
+
+class OefeningBarbell(Oefening):
     
     PRESS = "overhead press"
     SQUAT = "squat"
     BENCH = "bench press"
     DEADLIFT = "deadlift"
+    BENT_OVER_ROW = "bent-over row"
+    SHRUG = "shrug"
+    CALF_RAISE = "calf raise"
+
+class OefeningCurl(Oefening):
+    
+    CURLS = "curls"
+
+class OefeningDumbbell(Oefening):
+    
+    LATERAL_RAISE = "lateral raise"
 
 class OefeningType(Enum):
     
-    LICHAAMSGEWICHT = 1
-    GEWICHT = 2
-    BARBELL = OefeningBarbell
-    EZ_CURL = 4
-    DUMBELL = 5
+    LICHAAMSGEWICHT = ("lichaamsgewicht", OefeningLichaamsgewicht)
+    GEWICHT = ("gewicht", OefeningGewicht)
+    BARBELL = ("barbell", OefeningBarbell)
+    EZ_CURL = ("ez curl", OefeningCurl)
+    DUMBBELL = ("dumbbell", OefeningDumbbell)
 
 class RepetitieType(Enum):
     
@@ -30,19 +71,29 @@ class RepetitieType(Enum):
     BEREIK_AMRAP = "amrap met bereik"
     VRIJ = "vrij"
 
-class SetType(Enum):
+class GewichtType(Enum):
     
     GEWICHTLOOS = "gewichtloos"
     GEWICHT = "gewicht"
     PERCENTAGE = "percentage"
 
-class SetGroepType(Enum):
+class SetType(Enum):
     
-    WARM_UP = "warm-up sets"
+    OPWARMEN = "opwarmsets"
     HOOFD = "hoofdsets"
     AANVULLEND = "aanvullende sets"
+    VRIJ = "vrij"
+    
 
 ENUM_DICT = {
     "HalterType": HalterType,
-    "SetGroepType": SetGroepType,
+    "OefeningLichaamsgewicht": OefeningLichaamsgewicht,
+    "OefeningGewicht": OefeningGewicht,
+    "OefeningBarbell": OefeningBarbell,
+    "OefeningCurl": OefeningCurl,
+    "OefeningDumbbell": OefeningDumbbell,
+    "OefeningType": OefeningType,
+    "RepetitieType": RepetitieType,
+    "GewichtType": GewichtType,
+    "SetType": SetType,
     }
