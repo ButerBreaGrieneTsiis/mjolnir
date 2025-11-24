@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import datetime as dt
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Dict, List
+from typing import Any, Dict, List
 from uuid import uuid4
 
 from grienetsiis import Decoder, openen_json, opslaan_json, invoer_validatie, invoer_kiezen
@@ -29,7 +29,7 @@ class GeregistreerdObject:
         dict_naar_json = {}
         
         for veld_sleutel, veld_waarde in self.__dict__.items():
-            print(veld_sleutel, veld_waarde)
+            
             # alle velden uitsluiten die standaardwaardes hebben; nutteloos om op te slaan
             if veld_waarde is None:
                 continue
@@ -49,7 +49,7 @@ class GeregistreerdObject:
                 dict_naar_json[veld_sleutel] = veld_waarde.strftime("%Y-%m-%d")
             else:
                 dict_naar_json[veld_sleutel] = veld_waarde
-        print(dict_naar_json)
+        
         return dict_naar_json
     
     @classmethod
@@ -74,6 +74,7 @@ class GeregistreerdObject:
                     )
             else:
                 continue
+            
             dict[veld] = waarde
         
         return cls(**dict)
@@ -119,6 +120,22 @@ class Register(dict):
             enum_dict = ENUM_DICT,
             )
     
+    def selecteer(
+        self,
+        veld: str,
+        waarde: Any,
+        geef_object: bool = True,
+        ) -> GeregistreerdObject | None:
+        
+        for uuid, geregistreerd_object in self.items():
+            if getattr(geregistreerd_object, veld, None) == waarde:
+                if geef_object:
+                    return geregistreerd_object
+                else:
+                    return uuid
+        
+        return None
+    
     @property
     def lijst(self) -> List["Register"]:
         return list(self.values())
@@ -133,22 +150,22 @@ class Register(dict):
         basis_type.uuid = uuid
         self[uuid] = basis_type
         
-        return basis_type
+        return uuid
     
-    def kiezen(self) -> type[GeregistreerdObject]:
+    def kiezen(self) -> str:
         
         keuze_optie = invoer_kiezen(
             beschrijving = f"{self.TYPE.__name__.lower()}",
             keuzes = {
                 f"nieuw {self.TYPE.__name__.lower()}": "nieuw",
             } | {
-                f"{geregistreerd_object}": geregistreerd_object for uuid, geregistreerd_object in self.items()
+                f"{geregistreerd_object}": uuid for uuid, geregistreerd_object in self.items()
                 },
             )
         
         if keuze_optie == "nieuw":
-            basis_type = self.nieuw()
+            uuid = self.nieuw()
         else:
-            basis_type = keuze_optie
+            uuid = keuze_optie
         
-        return basis_type
+        return uuid
