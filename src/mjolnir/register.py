@@ -144,7 +144,7 @@ class Register(dict):
         
         print(f"maak een nieuw {self.TYPE.__name__.lower()}")
         
-        basis_type = self.TYPE.nieuw(self.TYPE.__annotations__)
+        basis_type = self.TYPE.nieuw({sleutel: veld for sleutel, veld in self.TYPE.__annotations__.items() if sleutel not in self.TYPE.__dict__})
         uuid = str(uuid4())
         
         basis_type.uuid = uuid

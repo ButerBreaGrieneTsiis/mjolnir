@@ -22,38 +22,38 @@ class Spiergroep(Enum):
     HAMSTRINGS = "hamstrings"
     KUITEN = "kuiten"
 
-class Oefening(Enum):
+class OefeningEnum(Enum):
     pass
 
-class OefeningLichaamsgewicht(Oefening):
+class OefeningLichaamsgewicht(OefeningEnum):
     
-    PUSH_UPS = "push-up"
-    BENCH_DIPS = "bench dips"
-    SIT_UPS = "sit-ups"
-    PULL_UPS = "pull-up"
-    CHIN_UPS = "chin-up"
+    PUSH_UPS = ("push-up", [])
+    BENCH_DIPS = ("bench dips", [])
+    SIT_UPS = ("sit-ups", [])
+    PULL_UPS = ("pull-up", [])
+    CHIN_UPS = ("chin-up", [])
 
-class OefeningGewicht(Oefening):
+class OefeningGewicht(OefeningEnum):
     
-    SIT_UPS_GEWICHT = "sit-ups met gewicht"
+    SIT_UPS_GEWICHT = ("sit-ups met gewicht", [])
 
-class OefeningBarbell(Oefening):
+class OefeningBarbell(OefeningEnum):
     
-    PRESS = "overhead press"
-    SQUAT = "squat"
-    BENCH = "bench press"
-    DEADLIFT = "deadlift"
-    BENT_OVER_ROW = "bent-over row"
-    SHRUG = "shrug"
-    CALF_RAISE = "calf raise"
+    PRESS = ("overhead press", [Spiergroep.SCHOUDERS])
+    SQUAT = ("squat", [Spiergroep.ONDERRUG, Spiergroep.BILLEN, Spiergroep.QUADRICEPS, Spiergroep.HAMSTRINGS])
+    BENCH = ("bench press", [])
+    DEADLIFT = ("deadlift", [])
+    BENT_OVER_ROW = ("bent-over row", [])
+    SHRUG = ("shrug", [])
+    CALF_RAISE = ("calf raise", [])
 
-class OefeningCurl(Oefening):
+class OefeningCurl(OefeningEnum):
     
-    CURLS = "curls"
+    CURLS = ("curls", [])
 
-class OefeningDumbbell(Oefening):
+class OefeningDumbbell(OefeningEnum):
     
-    LATERAL_RAISE = "lateral raise"
+    LATERAL_RAISE = ("lateral raise", [])
 
 class OefeningType(Enum):
     
@@ -63,6 +63,13 @@ class OefeningType(Enum):
     EZ_CURL = ("ez curl", OefeningCurl)
     DUMBBELL = ("dumbbell", OefeningDumbbell)
 
+class GewichtType(Enum):
+    
+    GEWICHTLOOS = "geen gewicht"
+    GEWICHT = "vast gewicht"
+    PERCENTAGE = "percentage gewicht"
+    VRIJ = "vrij gewicht"
+
 class RepetitieType(Enum):
     
     AANTAL = "aantal"
@@ -71,19 +78,24 @@ class RepetitieType(Enum):
     BEREIK_AMRAP = "amrap met bereik"
     VRIJ = "vrij"
 
-class GewichtType(Enum):
-    
-    GEWICHTLOOS = "gewichtloos"
-    GEWICHT = "gewicht"
-    PERCENTAGE = "percentage"
-
 class SetType(Enum):
+    
+    AANTAL = "aantal"
+    AMSAP = "amsap"
+
+class SetGroepType(Enum):
     
     OPWARMEN = "opwarmsets"
     HOOFD = "hoofdsets"
     AANVULLEND = "aanvullende sets"
-    VRIJ = "vrij"
+    OVERIG = "overig"
+
+class Status(Enum):
     
+    GEPLAND = "gepland"
+    HUIDIG = "huidig"
+    AFGEROND = "afgerond"
+    AFGEBROKEN = "afgebroken"
 
 ENUM_DICT = {
     "HalterType": HalterType,
@@ -96,4 +108,5 @@ ENUM_DICT = {
     "RepetitieType": RepetitieType,
     "GewichtType": GewichtType,
     "SetType": SetType,
+    "Status": Status,
     }

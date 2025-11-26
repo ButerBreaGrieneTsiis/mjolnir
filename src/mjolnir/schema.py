@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import datetime as dt
 from typing import Dict, List
 
-from .enums import HalterType, OefeningType, RepetitieType, GewichtType, SetType, Oefening
+from .enums import HalterType, OefeningType, RepetitieType, GewichtType, SetType, OefeningEnum, Status
 from .register import GeregistreerdObject, Register
 
 from grienetsiis import Decoder, openen_json, opslaan_json, invoer_validatie, invoer_kiezen
@@ -89,6 +89,8 @@ class Sjabloon(GeregistreerdObject):
                         type = float,
                         bereik = (1.0, 999.9),
                         )}"
+                elif set_type == GewichtType.VRIJ:
+                    massa = "@?"
                 else:
                     massa = f"@{invoer_validatie(
                         beschrijving = "hoeveel percent",
@@ -157,23 +159,22 @@ class Sjablonen(Register):
 #     afgerond: bool = False
 
 @dataclass
-class SchemaCyclus(GeregistreerdObject):
+class Schema(GeregistreerdObject):
     
     naam: str
     weken: int
     dagen: int
+    status: Status = Status.GEPLAND # status wordt veranderd naar HUIDIG indien dit de eerstvolgende geplande is, en er zijn geen HUIDIG aanwezig
     trainingsschema: Dict[int, Dict[str, List[Sjabloon]]] = None
-    trainingsgewichten: List[Dict[str, Oefening | float]] = None
-    datum_start: dt.date = None # wordt veranderd bij als één Schemadag.afgerond = True
-    datum_eind: dt.date = None # wordt veranderd bij alle Schemadag.afgerond = True
-    afgerond: bool = False
-    huidig: bool = False
+    trainingsgewichten: List[Dict[str, OefeningEnum | float]] = None
+    datum_start: dt.date = None
+    datum_eind: dt.date = None
     
     @classmethod
     def nieuw(
         cls,
         velden,
-        ) -> "SchemaCyclus":
+        ) -> "Schema":
         
         cls = super().nieuw(velden)
         
@@ -286,13 +287,13 @@ class SchemaCyclus(GeregistreerdObject):
         
         # opstellen SchemaDag voor elke dag
         
-        # het paneel opent in principe het SchemaCyclus object 
+        # het paneel opent in principe het Schema object 
         # en pakt dan de eerstvolgende SchemaDag die isafgerond = False
         
-class SchemaCycli(Register):
+class Schemas(Register):
     
-    BESTANDSNAAM: str = "schema"
-    TYPE: type = SchemaCyclus
+    BESTANDSNAAM: str = "schemas"
+    TYPE: type = Schema
     
     
 
