@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import List
+from typing import ClassVar, List
 
-from .enums import HalterType
-from .register import GeregistreerdObject, Register
+from mjolnir.enums import HalterType
+from mjolnir.register import GeregistreerdObject, Register
 
 
 @dataclass
@@ -13,14 +13,11 @@ class Halterschijf(GeregistreerdObject):
     aantal: int
     breedte: int
     
+    BESTANDSNAAM: ClassVar[str] = "halterschijven"
+    
     def __repr__(self) -> str:
         return f"halterschijf {self.massa} kg Ø{self.diameter}"
     
-class Halterschijven(Register):
-    
-    BESTANDSNAAM: str = "halterschijven"
-    TYPE: type = Halterschijf
-
 @dataclass
 class Halterstang(GeregistreerdObject):
     
@@ -29,6 +26,8 @@ class Halterstang(GeregistreerdObject):
     massa: float
     diameter: int
     opname_breedte: int
+    
+    BESTANDSNAAM: ClassVar[str] = "halterstangen"
     
     def __repr__(self) -> str:
         return f"halterstang \"{self.naam}\" van type \"{self.halter_type.value}\""
@@ -64,11 +63,6 @@ class Halterstang(GeregistreerdObject):
             halterschijven_rechts,
             )
 
-class Halterstangen(Register):
-    
-    BESTANDSNAAM: str = "halterstangen"
-    TYPE: type = Halterstang
-
 class Halter:
     
     def __init__(
@@ -93,3 +87,20 @@ class Halter:
         return self.halterstang.massa + \
             sum([halterschijf.massa for halterschijf in self.halterschijven_links]) + \
             sum([halterschijf.massa for halterschijf in self.halterschijven_rechts])
+
+Register.DECODERS["halterstangen"] = {
+    "class": Halterstang,
+    "decoder_functie": Halterstang.van_json,
+    }
+Register.ENCODERS["halterstangen"] = {
+    "class": Halterstang,
+    "encoder_functie": Halterstang.naar_json,
+    }
+Register.DECODERS["halterschijven"] = {
+    "class": Halterschijf,
+    "decoder_functie": Halterschijf.van_json,
+    }
+Register.ENCODERS["halterschijven"] = {
+    "class": Halterschijf,
+    "encoder_functie": Halterschijf.naar_json,
+    }

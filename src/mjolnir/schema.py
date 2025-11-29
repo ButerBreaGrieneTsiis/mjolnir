@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 import datetime as dt
 from typing import Dict, List
 
-from .enums import HalterType, OefeningType, RepetitieType, GewichtType, SetType, OefeningEnum, Status
-from .register import GeregistreerdObject, Register
+from mjolnir.enums import HalterType, OefeningType, RepetitieType, GewichtType, SetType, OefeningEnum, Status
+from mjolnir.register import GeregistreerdObject, Register
 
 from grienetsiis import Decoder, openen_json, opslaan_json, invoer_validatie, invoer_kiezen
 
@@ -145,11 +145,6 @@ class Sjabloon(GeregistreerdObject):
         
         return cls
 
-class Sjablonen(Register):
-    
-    BESTANDSNAAM: str = "sjablonen"
-    TYPE: type = Sjabloon
-
 # @dataclass
 # class SchemaDag(GeregistreerdObject):
     
@@ -178,8 +173,6 @@ class Schema(GeregistreerdObject):
         
         cls = super().nieuw(velden)
         
-        sjablonen = Sjablonen.openen()
-        
         trainingsschema = {}
         trainingsgewichten = []
         
@@ -196,7 +189,7 @@ class Schema(GeregistreerdObject):
                     for oefening_sjablonen in trainingsschema[f"dag {dag}"]:
                         print(f"  oefening \"{oefening_sjablonen["oefening"].value}\"")
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
-                            print(f"    {sjablonen[sjabloon_uuid]}")
+                            print(f"    {Register().sjablonen[sjabloon_uuid]}")
                     
                     if invoer_kiezen(
                         beschrijving = "nog een oefening toevoegen?",
@@ -228,7 +221,7 @@ class Schema(GeregistreerdObject):
                     if len(oefening_sjablonen["sjablonen"]) > 0:
                         print(f"\nsjablonen voor {oefening.value}")
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
-                            print(f"    {sjablonen[sjabloon_uuid]}")
+                            print(f"    {Register().sjablonen[sjabloon_uuid]}")
                         
                         if invoer_kiezen(
                             beschrijving = "nog een sjabloon toevoegen?",
@@ -238,12 +231,12 @@ class Schema(GeregistreerdObject):
                             
                             break
                     
-                    sjabloon_uuid = sjablonen.kiezen()
+                    sjabloon_uuid = Register().sjablonen.kiezen()
                     # enkel sjablonen kiezen met gelijk aantal weken
                     
                     oefening_sjablonen["sjablonen"].append(sjabloon_uuid)
                     
-                    if any(["%" in set for week in sjablonen[sjabloon_uuid].sets.values() for set in week]):
+                    if any(["%" in set for week in Register().sjablonen[sjabloon_uuid].sets.values() for set in week]):
                         
                         if not any([oefening == trainingsgewicht["oefening"] for trainingsgewicht in trainingsgewichten]):
                         
@@ -260,8 +253,6 @@ class Schema(GeregistreerdObject):
                                 })
                 
                 trainingsschema[f"dag {dag}"].append(oefening_sjablonen)
-        
-        sjablonen.opslaan()
         
         cls.trainingsschema = trainingsschema
         cls.trainingsgewichten = trainingsgewichten
@@ -290,13 +281,6 @@ class Schema(GeregistreerdObject):
         # het paneel opent in principe het Schema object 
         # en pakt dan de eerstvolgende SchemaDag die isafgerond = False
         
-class Schemas(Register):
-    
-    BESTANDSNAAM: str = "schemas"
-    TYPE: type = Schema
-    
-    
-
 # @dataclass
 # class Oefening:
     
@@ -346,3 +330,20 @@ class Schemas(Register):
 
 # SETGROEPEN = Setgroepen.openen()
 # SJABLONEN = Sjablonen.openen()
+
+Register.DECODERS["sjablonen"] = {
+    "class": Sjabloon,
+    "decoder_functie": Sjabloon.van_json,
+    }
+Register.ENCODERS["sjablonen"] = {
+    "class": Sjabloon,
+    "encoder_functie": Sjabloon.naar_json,
+    }
+Register.DECODERS["schema"] = {
+    "class": Schema,
+    "decoder_functie": Schema.van_json,
+    }
+Register.ENCODERS["schema"] = {
+    "class": Schema,
+    "encoder_functie": Schema.naar_json,
+    }

@@ -2,6 +2,8 @@
 .vscode
 .venv
 build
+dev
+gegevens
 
 # build files
 build

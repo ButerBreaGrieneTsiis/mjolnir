@@ -97,7 +97,7 @@ class Status(Enum):
     AFGEROND = "afgerond"
     AFGEBROKEN = "afgebroken"
 
-ENUM_DICT = {
+ENUMS = {
     "HalterType": HalterType,
     "OefeningLichaamsgewicht": OefeningLichaamsgewicht,
     "OefeningGewicht": OefeningGewicht,
@@ -108,5 +108,6 @@ ENUM_DICT = {
     "RepetitieType": RepetitieType,
     "GewichtType": GewichtType,
     "SetType": SetType,
+    "SetGroepType": SetGroepType,
     "Status": Status,
     }
