@@ -19,7 +19,7 @@ class Sjabloon(GeregistreerdObject):
     BESTANDSNAAM: ClassVar[str] = "sjablonen"
     
     def __repr__(self) -> str:
-        return self.naam
+        return f"{self.naam} ({self.setgroep_type.value})"
     
     @classmethod
     def nieuw(
@@ -47,6 +47,42 @@ class Sjabloon(GeregistreerdObject):
                         ):
                         
                         break
+                
+                set_type = invoer_kiezen(
+                    beschrijving = "set type",
+                    keuzes = {set_type.value: set_type for set_type in SetType},
+                    )
+                
+                if set_type == SetType.VRIJ:
+                    set_tekst = "?"
+                elif set_type == SetType.AANTAL:
+                    set_tekst = f"{invoer_validatie(
+                    beschrijving = "aantal sets",
+                    type = int,
+                    bereik = (1, 10),
+                    )}"
+                elif set_type == SetType.AMRAP:
+                    set_tekst = f"{invoer_validatie(
+                        beschrijving = "minimaal aantal sets",
+                        type = int,
+                        bereik = (1, 99),
+                        )}+"
+                else:
+                    sets_minimaal = invoer_validatie(
+                        beschrijving = "minimaal aantal sets",
+                        type = int,
+                        bereik = (1, 99),
+                        )
+                    sets_maximaal = invoer_validatie(
+                        beschrijving = "maximaal aantal sets",
+                        type = int,
+                        bereik = (1, 99),
+                        )
+                    
+                    if set_type == SetType.BEREIK:
+                        set_tekst = f"{sets_minimaal}-{sets_maximaal}"
+                    else:
+                        set_tekst = f"{sets_minimaal}-{sets_maximaal}+"
                 
                 repetitie_type = invoer_kiezen(
                     beschrijving = "repetitie type",
@@ -106,23 +142,7 @@ class Sjabloon(GeregistreerdObject):
                         bereik = (0, 100),
                         )}%"
                 
-                set_type = invoer_kiezen(
-                    beschrijving = "set type",
-                    keuzes = {set_type.value: set_type for set_type in SetType},
-                    )
-                
-                aantal_sets = invoer_validatie(
-                    beschrijving = "aantal sets",
-                    type = int,
-                    bereik = (1, 10),
-                    )
-                
-                if set_type == SetType.AANTAL:
-                    set_tekst = f"{aantal_sets}x"
-                else:
-                    set_tekst = f"{aantal_sets}+x"
-                    
-                if aantal_sets == "1":
+                if "-" not in set_tekst and "+" not in set_tekst and "?" not in set_tekst:
                     set = f"{repetitie_tekst}{massa}"
                 else:
                     set = f"{set_tekst}{repetitie_tekst}{massa}"
@@ -159,27 +179,21 @@ class Sjabloon(GeregistreerdObject):
         
         return cls
 
-# @dataclass
-# class SchemaDag(GeregistreerdObject):
-    
-#     week: int
-#     dag: int
-#     oefeningen: List
-#     afgerond: bool = False
-
 @dataclass
 class Schema(GeregistreerdObject):
     
     naam: str
     weken: int
     dagen: int
-    status: Status = Status.GEPLAND # status wordt veranderd naar HUIDIG indien dit de eerstvolgende geplande is, en er zijn geen HUIDIG aanwezig
-    trainingsschema: Dict[int, Dict[str, List[Sjabloon]]] = None
+    status: Status = Status.GEPLAND
+    oefeningen: Dict[str, Dict[str, List[Sjabloon]]] = None
     trainingsgewichten: List[Dict[str, OefeningEnum | float]] = None
-    datum_start: dt.date = None
-    datum_eind: dt.date = None
+    sessies: Dict[str, Dict[str, dt.date]] = None
     
     BESTANDSNAAM: ClassVar[str] = "schema"
+    
+    def __repr__(self) -> str:
+        return f"{self.naam} ({self.status.value})"
     
     @classmethod
     def nieuw(
@@ -189,20 +203,29 @@ class Schema(GeregistreerdObject):
         
         cls = super().nieuw(velden)
         
-        trainingsschema = {}
+        oefeningen = {}
         trainingsgewichten = []
+        sessies = {}
+        
+        for week in range(1, cls.weken + 1):
+            sessies[f"week {week}"] = {}
+            for dag in range(1, cls.dagen + 1):
+                sessies[f"week {week}"][f"dag {dag}"] = {
+                    "datum": None,
+                    "status": Status.GEPLAND,
+                    }
         
         for dag in range(1, cls.dagen + 1):
             
-            trainingsschema[f"dag {dag}"] = []
+            oefeningen[f"dag {dag}"] = []
             
             print(f"\ntoevoegen oefeningen voor dag {dag}")
             
             while True:
                 
-                if len(trainingsschema[f"dag {dag}"]) > 0:
+                if len(oefeningen[f"dag {dag}"]) > 0:
                     print(f"\nschema voor dag {dag}")
-                    for oefening_sjablonen in trainingsschema[f"dag {dag}"]:
+                    for oefening_sjablonen in oefeningen[f"dag {dag}"]:
                         print(f"  oefening \"{oefening_sjablonen["oefening"].value[0]}\"")
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
@@ -255,7 +278,7 @@ class Schema(GeregistreerdObject):
                         
                         if not any([oefening == trainingsgewicht["oefening"] for trainingsgewicht in trainingsgewichten]):
                         
-                            print(f"\ntrainingspercentage nodig voor oefening \"{oefening.value[0]}\"")
+                            print(f"\ntrainingsgewicht nodig voor oefening \"{oefening.value[0]}\"")
                             
                             trainingsgewicht = invoer_validatie(
                                 f"trainingsgewicht",
@@ -267,84 +290,19 @@ class Schema(GeregistreerdObject):
                                 "trainingsgewicht": trainingsgewicht,
                                 })
                 
-                trainingsschema[f"dag {dag}"].append(oefening_sjablonen)
+                oefeningen[f"dag {dag}"].append(oefening_sjablonen)
         
-        cls.trainingsschema = trainingsschema
+        cls.oefeningen = oefeningen
         cls.trainingsgewichten = trainingsgewichten
+        cls.sessies = sessies
+        
+        if len(Register().schema.filter(status = Status.HUIDIG)) == 0:
+            cls.status = Status.HUIDIG
         
         return cls
-        
-        # bool: zijn de oefeningen gelijk per week (voor nu enkel True)
-        
-        # voeg oefeningen toe voor de dagen:
-            # dag 1:
-                # oefening 1
-                    # kies een oefening -> OefeningType -> Oefening (bijv. OefeningType.BARBELL -> OefeningBarbell.PRESS)
-                    # sjablonen kiezen (enkel sjablonen tonen met overeenkomstig aantal weken)
-                        #   sjabloon 1
-                        #   sjabloon 2
-                        #   sjabloon :
-                    # volgende oefening?
-                # oefening 2
-                # oefening : (hoe omgaan bij bijv. sit-ups met selecteren sjabloon als de reps/sets minder strak bepaald zijn?)
-                # volgende dag?
-            # dag 2
-            # dag :
-        
-        # opstellen SchemaDag voor elke dag
-        
-        # het paneel opent in principe het Schema object 
-        # en pakt dan de eerstvolgende SchemaDag die isafgerond = False
-        
-# @dataclass
-# class Oefening:
-    
-#     oefening: type[OefeningType]
-#     setgroepen: List[Setgroep]
 
-# @dataclass
-# class TrainingsDag(GeregistreerdObject):
-    
-#     oefeningen: Dict[type[OefeningType], List[Set]]
-    
-#     # een blauwprint: lijst van oefeningen
-#         # een oefening: deze <oefening> met een lijst van sets
-#             # een set: aantal reps en (gewicht of percentage) -> TM zelf niet in dit bestand, dit is puur een blauwprint
-
-
-# class TrainingsCyclus: # of TrainingsSchema
-    
-#     def __init__(
-#         self,
-#         naam: str,
-#         weken: int,
-#         dagen: int,
-#         trainingsschemas: Dict[int, Dict[int, TrainingsDag]]
-#         ) -> "TrainingsCyclus":
-        
-#         self.naam = naam
-#         self.weken = weken
-#         self.dagen = dagen
-#         self.trainingsschemas = trainingsschemas
-
-# class TrainingsCyci(Register):
-    
-#     BESTANDSNAAM: str = "trainingscycli"
-#     TYPE: type = TrainingsCyclus
-
-
-# # class TrainingsSuperCyclus: # of TrainingsSchema ?
-    
-# #     def __init__(
-# #         self,
-# #         cycli: List[TrainingsCyclus] = None,
-# #         ) -> TrainingsSuperCyclus:
-        
-# #         self.cycli = cycli
-
-
-# SETGROEPEN = Setgroepen.openen()
-# SJABLONEN = Sjablonen.openen()
+def huidig_schema() -> str:
+    return Register().schema.filter(status = Status.HUIDIG).keys()[0] 
 
 Register.DECODERS["sjablonen"] = {
     "class": Sjabloon,

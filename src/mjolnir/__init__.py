@@ -1,4 +1,5 @@
 from .belading import Halterschijf, Halterstang
+from .paneel import paneel
 from .register import Register
 from .schema import Sjabloon, Schema
 

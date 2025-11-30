@@ -1,9 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass
 import datetime as dt
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 from uuid import uuid4
 
 from grienetsiis import openen_json, opslaan_json, invoer_validatie, invoer_kiezen
@@ -28,14 +27,18 @@ class Subregister(dict):
     def filter(
         self,
         **filters,
-        ) -> Subregister:
+        ) -> Subregister | Tuple[str, GeregistreerdObject]:
         
         subregister = Subregister(type = self.type)
         
         for uuid, geregistreerd_object in self.items():
             for sleutel, waardes in filters.items():
-                for waarde in waardes:
-                    if getattr(geregistreerd_object, sleutel, None) == waarde:
+                if isinstance(waardes, list):
+                    for waarde in waardes:
+                        if getattr(geregistreerd_object, sleutel, None) == waarde:
+                            subregister[uuid] = geregistreerd_object
+                else:
+                    if getattr(geregistreerd_object, sleutel, None) == waardes:
                         subregister[uuid] = geregistreerd_object
         
         return subregister

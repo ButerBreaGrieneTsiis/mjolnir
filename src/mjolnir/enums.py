@@ -108,9 +108,15 @@ ENUMS = {
     "OefeningCurl": OefeningCurl,
     "OefeningDumbbell": OefeningDumbbell,
     "OefeningType": OefeningType,
-    "RepetitieType": RepetitieType,
     "GewichtType": GewichtType,
+    "RepetitieType": RepetitieType,
     "SetType": SetType,
     "SetGroepType": SetGroepType,
     "Status": Status,
+    }
+
+HALTERS = {
+    "OefeningBarbell": HalterType.BARBELL,
+    "OefeningCurl": HalterType.EZ_CURL,
+    "OefeningDumbbell": HalterType.DUMBELL,
     }
