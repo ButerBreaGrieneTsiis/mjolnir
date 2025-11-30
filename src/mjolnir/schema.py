@@ -13,6 +13,7 @@ class Sjabloon(GeregistreerdObject):
     
     naam: str
     setgroep_type: SetGroepType
+    weken: int = 0
     sets: Dict[str, List[str]] = None
     
     BESTANDSNAAM: ClassVar[str] = "sjablonen"
@@ -130,7 +131,7 @@ class Sjabloon(GeregistreerdObject):
                 
             return sets
         
-        week_optie = invoer_kiezen(
+        weken = invoer_kiezen(
             beschrijving = "hoeveel weken heeft dit sjabloon?",
             keuzes = {
                 "weekonafhankelijk": 0,
@@ -142,17 +143,18 @@ class Sjabloon(GeregistreerdObject):
         
         sets_per_week = {}
         
-        if week_optie == 0:
+        if weken == 0:
             print(f"\nkies de sets voor elke week")
             sets = sets_maken()
-            sets_per_week[f"week {week_optie}"] = sets
+            sets_per_week[f"week {weken}"] = sets
         else:
-            for week in range(1, week_optie + 1):
+            for week in range(1, weken + 1):
                 
                 print(f"\nkies de sets voor week {week}")
                 sets = sets_maken()
                 sets_per_week[f"week {week}"] = sets
         
+        cls.weken = weken
         cls.sets = sets_per_week
         
         return cls
@@ -201,7 +203,7 @@ class Schema(GeregistreerdObject):
                 if len(trainingsschema[f"dag {dag}"]) > 0:
                     print(f"\nschema voor dag {dag}")
                     for oefening_sjablonen in trainingsschema[f"dag {dag}"]:
-                        print(f"  oefening \"{oefening_sjablonen["oefening"].value}\"")
+                        print(f"  oefening \"{oefening_sjablonen["oefening"].value[0]}\"")
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                     
@@ -245,8 +247,7 @@ class Schema(GeregistreerdObject):
                             
                             break
                     
-                    sjabloon_uuid = Register().sjablonen.kiezen()
-                    # enkel sjablonen kiezen met gelijk aantal weken
+                    sjabloon_uuid = Register().sjablonen.filter(weken = [0, cls.weken]).kiezen()
                     
                     oefening_sjablonen["sjablonen"].append(sjabloon_uuid)
                     

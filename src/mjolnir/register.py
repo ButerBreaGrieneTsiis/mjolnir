@@ -25,21 +25,20 @@ class Subregister(dict):
     def __init__(self, type):
         self.type = type
     
-    def selecteren(
+    def filter(
         self,
-        veld: str,
-        waarde: Any,
-        geef_object: bool = True,
-        ) -> GeregistreerdObject | None:
+        **filters,
+        ) -> Subregister:
+        
+        subregister = Subregister(type = self.type)
         
         for uuid, geregistreerd_object in self.items():
-            if getattr(geregistreerd_object, veld, None) == waarde:
-                if geef_object:
-                    return geregistreerd_object
-                else:
-                    return uuid
+            for sleutel, waardes in filters.items():
+                for waarde in waardes:
+                    if getattr(geregistreerd_object, sleutel, None) == waarde:
+                        subregister[uuid] = geregistreerd_object
         
-        return None
+        return subregister
     
     @property
     def lijst(self) -> List[GeregistreerdObject]:
