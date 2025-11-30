@@ -1,11 +1,11 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import datetime as dt
 from typing import ClassVar, Dict, List
 
-from mjolnir.enums import HalterType, OefeningType, RepetitieType, GewichtType, SetType, OefeningEnum, Status, SetGroepType
+from mjolnir.enums import OefeningType, RepetitieType, GewichtType, SetType, OefeningEnum, Status, SetGroepType
 from mjolnir.register import GeregistreerdObject, Register
 
-from grienetsiis import Decoder, openen_json, opslaan_json, invoer_validatie, invoer_kiezen
+from grienetsiis import invoer_validatie, invoer_kiezen
 
 
 @dataclass
@@ -220,10 +220,10 @@ class Schema(GeregistreerdObject):
                 
                 oefening = invoer_kiezen(
                     beschrijving = "oefening",
-                    keuzes = {enum.value: enum for enum in oefening_type},
+                    keuzes = {enum.value[0]: enum for enum in oefening_type},
                     )
                 
-                print(f"\n>>> oefening \"{oefening.value}\" gekozen")
+                print(f"\n>>> oefening \"{oefening.value[0]}\" gekozen")
                 
                 oefening_sjablonen = {
                     "oefening": oefening,
@@ -254,7 +254,7 @@ class Schema(GeregistreerdObject):
                         
                         if not any([oefening == trainingsgewicht["oefening"] for trainingsgewicht in trainingsgewichten]):
                         
-                            print(f"\ntrainingspercentage nodig voor oefening \"{oefening.value}\"")
+                            print(f"\ntrainingspercentage nodig voor oefening \"{oefening.value[0]}\"")
                             
                             trainingsgewicht = invoer_validatie(
                                 f"trainingsgewicht",

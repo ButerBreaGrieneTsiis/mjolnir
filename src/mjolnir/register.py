@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List
 from uuid import uuid4
 
-from grienetsiis import Decoder, openen_json, opslaan_json, invoer_validatie, invoer_kiezen
+from grienetsiis import openen_json, opslaan_json, invoer_validatie, invoer_kiezen
 
 from mjolnir.enums import ENUMS
 
@@ -20,10 +20,10 @@ class Singleton(type):
             Singleton.objecten[cls] = super().__call__(*args, **kwargs)
         return Singleton.objecten[cls]
 
-@dataclass
 class Subregister(dict):
     
-    type: type
+    def __init__(self, type):
+        self.type = type
     
     def selecteren(
         self,
