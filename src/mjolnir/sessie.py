@@ -78,6 +78,13 @@ class Set:
             halter = halter,
             )
     
+    @property
+    def repetitie_tekst(self) -> str:
+        if "x" in self.setcode:
+            return self.setcode.split("x")[1].split("@")[0]
+        else:
+            return self.setcode.split("@")[0]
+    
     @staticmethod
     def sets_uit_setcode(setcode: str) -> Tuple[SetType, int]:
         
@@ -187,15 +194,14 @@ class Set:
                 st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
         
         expander = st.expander(
-            label = f"set {self.set_nummer} ({self.setcode})",
+            label = f"set {self.set_nummer}: {self.repetitie_tekst}× {f"{self.halter.massa}".replace(".", ",")} kg ({self.setcode})",
             expanded = st.session_state[f"expander_{oefening}_{self.set_nummer}"],
             )
         
-        kolom1, kolom2, kolom3 = expander.columns(3)
+        kolom1, kolom2, kolom3 = expander.columns([0.2, 0.2, 0.6])
         
         kolom1.markdown("**repetities**")
-        kolom1.markdown(f"{self.repetitie_aantal} ({self.repetitie_type.value})")
-        # TODO veranderen naar: "5", "5+", "3-5", "3-5+" of "vrij"
+        kolom1.markdown(f"{self.repetitie_tekst} ({self.repetitie_type.value})")
         
         kolom2.markdown("**gewicht**")
         kolom2.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
