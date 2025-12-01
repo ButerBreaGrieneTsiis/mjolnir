@@ -301,9 +301,6 @@ class Schema(GeregistreerdObject):
         
         return cls
 
-def huidig_schema() -> str:
-    return Register().schema.filter(status = Status.HUIDIG).keys()[0] 
-
 Register.DECODERS["sjablonen"] = {
     "class": Sjabloon,
     "decoder_functie": Sjabloon.van_json,

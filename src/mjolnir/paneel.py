@@ -3,27 +3,26 @@ import streamlit as st
 from mjolnir.register import Register
 from mjolnir.sessie import Sessie
 
-
-@st.cache_data
-def laden():
-    Register.openen()
-    sessie = Sessie.huidig()
-    return sessie
-
 def opslaan(sessie):
-    Register().opslaan()
     sessie.opslaan()
+    Register().opslaan()
 
 def paneel():
     
-    sessie = laden()
+    if "register" not in st.session_state:
+        st.session_state["register"] = Register.openen()
     
-    for oefening in sessie.oefeningen:
-        st.write(oefening.oefening.value[0])
+    if "sessie" not in st.session_state:
+        st.session_state["sessie"] = Sessie.huidig()
+    
+    for oefening in st.session_state["sessie"].oefeningen:
+        st.write(oefening.oefening.value[0].upper())
         for setgroep, sets in oefening.sets.items():
             st.write(setgroep)
             for set in sets:
-                set.paneel
+                set.paneel()
+                st.write(set.repetitie_gedaan)
     
-    # if button:
-    # opslaan()
+    if st.button("opslaan", key = "opslaan"):
+        st.session_state["sessie"].opslaan()
+        st.session_state["register"].opslaan()

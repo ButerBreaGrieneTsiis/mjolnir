@@ -1,19 +1,23 @@
 from dataclasses import dataclass
 import datetime as dt
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from grienetsiis import opslaan_json
 import streamlit as st
 
 from mjolnir.belading import Halter
-from mjolnir.enums import OefeningEnum, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, Status, HALTERS
+from mjolnir.enums import OefeningEnum, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, Status, ENUMS, HALTERS
 from mjolnir.register import Register
-from mjolnir.schema import Sjabloon
 
 
 @dataclass
 class Set:
     
     code: str
+    
+    oefening: OefeningEnum
+    set_nummer: int
     
     set_type: SetType
     set_aantal: int | Tuple[int, int]
@@ -34,6 +38,7 @@ class Set:
     def van_setcode(
         cls,
         code: str,
+        set_nummer: int,
         oefening: OefeningEnum,
         trainingsgewichten,
         ):
@@ -114,6 +119,8 @@ class Set:
         
         return cls(
             code = code,
+            oefening = oefening,
+            set_nummer = set_nummer,
             set_type = set_type,
             set_aantal = set_aantal,
             repetitie_type = repetitie_type,
@@ -123,13 +130,43 @@ class Set:
             halter = halter,
             )
     
-    @property
     def paneel(self):
         
-        container = st.container()
-        container.write(self.code)
+        if self.repetitie_type == RepetitieType.AANTAL:
+            max_repetities = self.repetitie_aantal
+            aantal_repetities = self.repetitie_aantal
+        elif self.repetitie_type == RepetitieType.BEREIK:
+            max_repetities = self.repetitie_aantal[1]
+            aantal_repetities = self.repetitie_aantal[1]
+        else:
+            max_repetities = 20
+            if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
+                aantal_repetities = self.repetitie_aantal[1]
+            else:
+                aantal_repetities = self.repetitie_aantal
         
-        return container
+        formulier = st.form(f"repetities_{self.oefening.value[0]}_{self.set_nummer}")
+        
+        formulier.write(f"set {self.set_nummer} ({self.code})")
+        formulier.write(self.halter)
+        
+        formulier.slider(
+            label = "repetities",
+            min_value = 0,
+            max_value = max_repetities,
+            key = f"repetities_{self.oefening.value[0]}_{self.set_nummer}",
+            value = aantal_repetities,
+            )
+        
+        set_klaar = formulier.form_submit_button(
+            label = "afronden",
+            key = f"knop_{self.oefening.value[0]}_{self.set_nummer}",
+            )
+        
+        if set_klaar:
+            self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.value[0]}_{self.set_nummer}"]
+        
+        return formulier
         
         
     # @property
@@ -140,7 +177,7 @@ class Set:
 class Oefening:
     
     oefening: OefeningEnum
-    sets: Dict[str, List[Set]] # waar str = SetGroepType.value
+    sets: Dict[str, List[Set]]
     
     @classmethod
     def nieuw(
@@ -153,6 +190,8 @@ class Oefening:
         
         sets = {}
         
+        set_nummer = 0
+        
         for sjabloon_uuid in sjablonen:
             
             sjabloon = Register().sjablonen[sjabloon_uuid]
@@ -164,8 +203,11 @@ class Oefening:
             
             for setcode in setcodes:
                 
+                set_nummer += 1
+                
                 set = Set.van_setcode(
                     code = setcode,
+                    set_nummer = set_nummer,
                     oefening = oefening,
                     trainingsgewichten = trainingsgewichten,
                     )
@@ -192,7 +234,6 @@ class Sessie:
     dag: int
     datum: dt.date
     oefeningen: List[Oefening]
-    resultaten = None
     
     @classmethod
     def huidig(cls):
@@ -211,6 +252,8 @@ class Sessie:
             else:
                 continue
             break
+        else:
+            raise RuntimeError("geen geplande sessies staan")
         
         oefeningen = []
         trainingsschema = schema.oefeningen[f"dag {dag}"]
@@ -233,7 +276,6 @@ class Sessie:
             datum = dt.date.today(),
             oefeningen = oefeningen,
             )
-        
     
     def opslaan(self) -> None:
         
@@ -242,38 +284,42 @@ class Sessie:
         schema.sessies[f"week {self.week}"][f"dag {self.dag}"]["status"] = Status.AFGEROND
         schema.sessies[f"week {self.week}"][f"dag {self.dag}"]["datum"] = self.datum
         
-        # Register().opslaan() -> ergens anders runnen
+        bestandspad = Path(f"gegevens\\{self.datum.strftime("%Y-%m-%d")}.json")
         
-        # zichzelf opslaan
-        # alles opslaan behalve Sessie.oefening
-        # focus ligt op Sessie.resultaten
+        sessie = {
+            "schema_uuid": self.schema_uuid,
+            "week": self.week,
+            "dag": self.dag,
+            "datum": self.datum.strftime("%Y-%m-%d"),
+            "resultaten": self.resultaten,
+            }
         
-        # resultaten -> naar alle Set objecten en *_gedaan pakken
+        opslaan_json(
+            sessie,
+            bestandspad,
+            enum_dict = ENUMS,
+            )
+    
+    @property
+    def resultaten(self):
         
+        resultaten = []
         
+        for oefening in self.oefeningen:
+            
+            oefening_dict = {
+                "oefening": oefening.oefening,
+                "sets": [],
+                }
+            
+            for setgroep, sets in oefening.sets.items():
+                for set in sets:
+                    oefening_dict["sets"].append({
+                        "sets": set.set_gedaan,
+                        "repetities": set.repetitie_gedaan,
+                        "gewicht": set.gewicht_gedaan,
+                        })
+            
+            resultaten.append(oefening_dict)
         
-        ...
-        # opslaan van deze sessie na afronden dashboard
-        # schema_uuid:
-        # week:
-        # dag:
-        # datum:
-        # oefeningen:
-        #   oefening 1:
-        #     OefeningEnum
-        #     setgroep 1: (ook al is er geen setgroep, bijv. bij assistance, alsnog setgroep "overig")
-        #       set 1:
-        #         repetities: int # enkel repetities gedaan, repetities gepland volgt wel uit schema_uuid
-        #         (gewicht: float) indien toepasselijk # enkel gewicht gedaan, gewicht gepland volgt wel uit schema_uuid
-        #       set 2: # enkel sets gedaan, sets gepland volgt wel uit schema_uuid
-        #       :
-        #     setgroep 2:
-        #     :
-        #   oefening 2:
-        #   :
-        #
-        
-        
-        # koppeling van de HalterType vindt op de achtergrond plaats:
-        # oefening is gelinkt aan een HalterType
-        # indien meerdere HalterTypes gedefinieerd zijn, is op het dashboard een keuze te maken (voor nu nog niet nodig om te implementeren)
+        return resultaten
