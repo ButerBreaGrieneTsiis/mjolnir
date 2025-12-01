@@ -54,19 +54,19 @@ class Sjabloon(GeregistreerdObject):
                     )
                 
                 if set_type == SetType.VRIJ:
-                    set_tekst = "?"
+                    set_tekst = "?x"
                 elif set_type == SetType.AANTAL:
                     set_tekst = f"{invoer_validatie(
                     beschrijving = "aantal sets",
                     type = int,
                     bereik = (1, 10),
-                    )}"
+                    )}x"
                 elif set_type == SetType.AMRAP:
                     set_tekst = f"{invoer_validatie(
                         beschrijving = "minimaal aantal sets",
                         type = int,
                         bereik = (1, 99),
-                        )}+"
+                        )}+x"
                 else:
                     sets_minimaal = invoer_validatie(
                         beschrijving = "minimaal aantal sets",
@@ -80,9 +80,9 @@ class Sjabloon(GeregistreerdObject):
                         )
                     
                     if set_type == SetType.BEREIK:
-                        set_tekst = f"{sets_minimaal}-{sets_maximaal}"
+                        set_tekst = f"{sets_minimaal}-{sets_maximaal}x"
                     else:
-                        set_tekst = f"{sets_minimaal}-{sets_maximaal}+"
+                        set_tekst = f"{sets_minimaal}-{sets_maximaal}+x"
                 
                 repetitie_type = invoer_kiezen(
                     beschrijving = "repetitie type",
@@ -142,7 +142,7 @@ class Sjabloon(GeregistreerdObject):
                         bereik = (0, 100),
                         )}%"
                 
-                if "-" not in set_tekst and "+" not in set_tekst and "?" not in set_tekst:
+                if set_tekst == "1x":
                     set = f"{repetitie_tekst}{massa}"
                 else:
                     set = f"{set_tekst}{repetitie_tekst}{massa}"
@@ -186,6 +186,8 @@ class Schema(GeregistreerdObject):
     weken: int
     dagen: int
     status: Status = Status.GEPLAND
+    datum_begin: dt.date = None
+    datum_eind: dt.date = None
     oefeningen: Dict[str, Dict[str, List[Sjabloon]]] = None
     trainingsgewichten: List[Dict[str, OefeningEnum | float]] = None
     sessies: Dict[str, Dict[str, dt.date]] = None

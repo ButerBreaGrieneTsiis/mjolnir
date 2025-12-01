@@ -14,13 +14,13 @@ from mjolnir.register import Register
 @dataclass
 class Set:
     
-    code: str
+    setcode: str
     
     oefening: OefeningEnum
     set_nummer: int
     
     set_type: SetType
-    set_aantal: int | Tuple[int, int]
+    set_aantal: int
     
     repetitie_type: RepetitieType
     repetitie_aantal: int | Tuple[int, int]
@@ -30,14 +30,13 @@ class Set:
     
     halter: Halter | None
     
-    set_gedaan: int = 0
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
     
     @classmethod
     def van_setcode(
         cls,
-        code: str,
+        setcode: str,
         set_nummer: int,
         oefening: OefeningEnum,
         trainingsgewichten,
@@ -45,14 +44,47 @@ class Set:
         
         oefening_type = oefening.__class__
         
-        if "x" in code:
-            _set_aantal = code.split("x")[0]
-            _repetitie_aantal = code.split("x")[1].split("@")[0]
-            _gewicht_aantal = code.split("@")[1]
+        set_type, set_aantal = cls.sets_uit_setcode(setcode)
+        repetitie_type, repetitie_aantal = cls.repetities_uit_setcode(setcode)
+        gewicht_type, gewicht = cls.gewicht_uit_setcode(setcode, trainingsgewichten, oefening)
+        
+        if oefening_type in [OefeningBarbell, OefeningCurl, OefeningDumbbell] and gewicht is not None:
+            
+            halterstangen = Register().halterstangen.filter(halter_type = HALTERS[oefening.__class__.__name__])
+            
+            if len(halterstangen) == 1:
+                halterstang = list(halterstangen.values())[0]
+                halterschijven = list(Register().halterschijven.filter(diameter = halterstang.diameter).values())
+            else:
+                raise NotImplementedError
+            
+            halter = halterstang.laden(
+                haltermassa = gewicht,
+                halterschijven = halterschijven,
+                )
+        else:
+            halter = None
+        
+        return cls(
+            setcode = setcode,
+            oefening = oefening,
+            set_nummer = set_nummer,
+            set_type = set_type,
+            set_aantal = set_aantal,
+            repetitie_type = repetitie_type,
+            repetitie_aantal = repetitie_aantal,
+            gewicht_type = gewicht_type,
+            gewicht = gewicht,
+            halter = halter,
+            )
+    
+    @staticmethod
+    def sets_uit_setcode(setcode: str) -> Tuple[SetType, int]:
+        
+        if "x" in setcode:
+            _set_aantal = setcode.split("x")[0]
         else:
             _set_aantal = "1"
-            _repetitie_aantal = code.split("@")[0]
-            _gewicht_aantal = code.split("@")[1]
         
         if "?" in _set_aantal:
             set_type = SetType.VRIJ
@@ -70,6 +102,16 @@ class Set:
             set_type = SetType.AANTAL
             set_aantal = int(_set_aantal)
         
+        return set_type, set_aantal
+    
+    @staticmethod
+    def repetities_uit_setcode(setcode: str) -> Tuple[RepetitieType, int]:
+        
+        if "x" in setcode:
+            _repetitie_aantal = setcode.split("x")[1].split("@")[0]
+        else:
+            _repetitie_aantal = setcode.split("@")[0]
+        
         if "?" in _repetitie_aantal:
             repetitie_type = RepetitieType.VRIJ
             repetitie_aantal = -1
@@ -86,6 +128,16 @@ class Set:
             repetitie_type = RepetitieType.AANTAL
             repetitie_aantal = int(_repetitie_aantal)
         
+        return repetitie_type, repetitie_aantal
+    
+    @staticmethod
+    def gewicht_uit_setcode(setcode: str, trainingsgewichten, oefening) -> Tuple[GewichtType, int]:
+        
+        if "x" in setcode:
+            _gewicht_aantal = setcode.split("@")[1]
+        else:
+            _gewicht_aantal = setcode.split("@")[1]
+        
         if "?" in _gewicht_aantal:
             gewicht_type = GewichtType.VRIJ
             gewicht = None
@@ -100,36 +152,8 @@ class Set:
             gewicht_type = GewichtType.GEWICHT
             gewicht = int(_gewicht_aantal)
         
-        if oefening_type in [OefeningBarbell, OefeningCurl, OefeningDumbbell] and gewicht is not None:
+        return gewicht_type, gewicht
         
-            halterstangen = Register().halterstangen.filter(halter_type = HALTERS[oefening.__class__.__name__])
-            
-            if len(halterstangen) == 1:
-                halterstang = list(halterstangen.values())[0]
-                halterschijven = list(Register().halterschijven.filter(diameter = halterstang.diameter).values())
-            else:
-                raise NotImplementedError
-            
-            halter = halterstang.laden(
-                haltermassa = gewicht,
-                halterschijven = halterschijven,
-                )
-        else:
-            halter = None
-        
-        return cls(
-            code = code,
-            oefening = oefening,
-            set_nummer = set_nummer,
-            set_type = set_type,
-            set_aantal = set_aantal,
-            repetitie_type = repetitie_type,
-            repetitie_aantal = repetitie_aantal,
-            gewicht_type = gewicht_type,
-            gewicht = gewicht,
-            halter = halter,
-            )
-    
     def paneel(self):
         
         if self.repetitie_type == RepetitieType.AANTAL:
@@ -139,7 +163,7 @@ class Set:
             max_repetities = self.repetitie_aantal[1]
             aantal_repetities = self.repetitie_aantal[1]
         else:
-            max_repetities = 20
+            max_repetities = 10
             if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
                 aantal_repetities = self.repetitie_aantal[1]
             else:
@@ -156,20 +180,32 @@ class Set:
         if f"knop_{oefening}_{self.set_nummer}" in st.session_state:
             if st.session_state[f"knop_{oefening}_{self.set_nummer}"]:
                 self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
+                self.gewicht_gedaan = self.halter.massa
                 st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
         
         expander = st.expander(
-            label = f"set {self.set_nummer} ({self.code})",
+            label = f"set {self.set_nummer} ({self.setcode})",
             expanded = st.session_state[f"expander_{oefening}_{self.set_nummer}"],
             )
         
-        expander.write(self.halter)
+        kolom1, kolom2, kolom3 = expander.columns(3)
+        
+        kolom1.markdown("**repetities**")
+        kolom1.markdown(f"{self.repetitie_aantal} ({self.repetitie_type.value})")
+        # TODO veranderen naar: "5", "5+", "3-5", "3-5+" of "vrij"
+        
+        kolom2.markdown("**gewicht**")
+        kolom2.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
+        
+        kolom3.markdown("**halter**")
+        kolom3.markdown(self.halter)
         
         expander.slider(
             label = "repetities",
             min_value = 0,
             max_value = max_repetities,
             key = f"repetities_{oefening}_{self.set_nummer}",
+            label_visibility = "hidden",
             )
         
         expander.button(
@@ -214,19 +250,23 @@ class Oefening:
             
             for setcode in setcodes:
                 
-                set_nummer += 1
+                _, set_aantal = Set.sets_uit_setcode(setcode)
                 
-                set = Set.van_setcode(
-                    code = setcode,
-                    set_nummer = set_nummer,
-                    oefening = oefening,
-                    trainingsgewichten = trainingsgewichten,
-                    )
+                for _ in range(set_aantal):
                 
-                if sjabloon.setgroep_type.value not in sets:
-                    sets[sjabloon.setgroep_type.value] = []
-                
-                sets[sjabloon.setgroep_type.value].append(set)
+                    set_nummer += 1
+                    
+                    set = Set.van_setcode(
+                        setcode = setcode,
+                        set_nummer = set_nummer,
+                        oefening = oefening,
+                        trainingsgewichten = trainingsgewichten,
+                        )
+                    
+                    if sjabloon.setgroep_type.value not in sets:
+                        sets[sjabloon.setgroep_type.value] = []
+                    
+                    sets[sjabloon.setgroep_type.value].append(set)
         
         return cls(
             oefening = oefening,
@@ -236,6 +276,14 @@ class Oefening:
     @property
     def volume(self) -> float:
         ...
+    
+    def paneel(self):
+        
+        st.write(self.oefening.value[0].upper())
+        for setgroep, sets in self.sets.items():
+            st.write(setgroep)
+            for set in sets:
+                set.paneel()
 
 @dataclass
 class Sessie:
@@ -295,6 +343,13 @@ class Sessie:
         schema.sessies[f"week {self.week}"][f"dag {self.dag}"]["status"] = Status.AFGEROND
         schema.sessies[f"week {self.week}"][f"dag {self.dag}"]["datum"] = self.datum
         
+        if schema.datum_begin is None:
+            schema.datum_begin = self.datum
+        
+        if all([dag["status"] != Status.GEPLAND for week in schema.sessies.values() for dag in week.values()]):
+            schema.datum_eind = self.datum
+            schema.status = Status.AFGEROND
+        
         bestandspad = Path(f"gegevens\\{self.datum.strftime("%Y-%m-%d")}.json")
         
         sessie = {
@@ -326,7 +381,6 @@ class Sessie:
             for setgroep, sets in oefening.sets.items():
                 for set in sets:
                     oefening_dict["sets"].append({
-                        "sets": set.set_gedaan,
                         "repetities": set.repetitie_gedaan,
                         "gewicht": set.gewicht_gedaan,
                         })
