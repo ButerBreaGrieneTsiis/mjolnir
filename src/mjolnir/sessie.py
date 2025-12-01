@@ -173,6 +173,8 @@ class Set:
         
         if f"expander_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"expander_{oefening}_{self.set_nummer}"] = True
+        if f"expander_{oefening}_{self.set_nummer + 1}" not in st.session_state:
+            st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = False
         
         if f"repetities_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"repetities_{oefening}_{self.set_nummer}"] = aantal_repetities
@@ -182,6 +184,7 @@ class Set:
                 self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
                 self.gewicht_gedaan = self.halter.massa
                 st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
+                st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
         
         expander = st.expander(
             label = f"set {self.set_nummer} ({self.setcode})",
