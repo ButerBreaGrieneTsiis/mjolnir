@@ -145,28 +145,39 @@ class Set:
             else:
                 aantal_repetities = self.repetitie_aantal
         
-        formulier = st.form(f"repetities_{self.oefening.value[0]}_{self.set_nummer}")
+        oefening = self.oefening.value[0].replace(" ", "_")
         
-        formulier.write(f"set {self.set_nummer} ({self.code})")
-        formulier.write(self.halter)
+        if f"expander_{oefening}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"expander_{oefening}_{self.set_nummer}"] = True
         
-        formulier.slider(
+        if f"repetities_{oefening}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"repetities_{oefening}_{self.set_nummer}"] = aantal_repetities
+        
+        if f"knop_{oefening}_{self.set_nummer}" in st.session_state:
+            if st.session_state[f"knop_{oefening}_{self.set_nummer}"]:
+                self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
+                st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
+        
+        expander = st.expander(
+            label = f"set {self.set_nummer} ({self.code})",
+            expanded = st.session_state[f"expander_{oefening}_{self.set_nummer}"],
+            )
+        
+        expander.write(self.halter)
+        
+        expander.slider(
             label = "repetities",
             min_value = 0,
             max_value = max_repetities,
-            key = f"repetities_{self.oefening.value[0]}_{self.set_nummer}",
-            value = aantal_repetities,
+            key = f"repetities_{oefening}_{self.set_nummer}",
             )
         
-        set_klaar = formulier.form_submit_button(
+        expander.button(
             label = "afronden",
-            key = f"knop_{self.oefening.value[0]}_{self.set_nummer}",
+            key = f"knop_{oefening}_{self.set_nummer}",
             )
         
-        if set_klaar:
-            self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.value[0]}_{self.set_nummer}"]
-        
-        return formulier
+        return expander
         
         
     # @property
