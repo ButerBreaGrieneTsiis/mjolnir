@@ -28,7 +28,7 @@ class Set:
     gewicht_type: GewichtType
     gewicht: float | None
     
-    halter: Halter | None
+    halter: Halter | None = None
     
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
@@ -42,28 +42,9 @@ class Set:
         trainingsgewichten,
         ):
         
-        oefening_type = oefening.__class__
-        
         set_type, set_aantal = cls.sets_uit_setcode(setcode)
         repetitie_type, repetitie_aantal = cls.repetities_uit_setcode(setcode)
         gewicht_type, gewicht = cls.gewicht_uit_setcode(setcode, trainingsgewichten, oefening)
-        
-        if oefening_type in [OefeningBarbell, OefeningCurl, OefeningDumbbell] and gewicht is not None:
-            
-            halterstangen = Register().halterstangen.filter(halter_type = HALTERS[oefening.__class__.__name__])
-            
-            if len(halterstangen) == 1:
-                halterstang = list(halterstangen.values())[0]
-                halterschijven = list(Register().halterschijven.filter(diameter = halterstang.diameter).values())
-            else:
-                raise NotImplementedError
-            
-            halter = halterstang.laden(
-                haltermassa = gewicht,
-                halterschijven = halterschijven,
-                )
-        else:
-            halter = None
         
         return cls(
             setcode = setcode,
@@ -75,7 +56,6 @@ class Set:
             repetitie_aantal = repetitie_aantal,
             gewicht_type = gewicht_type,
             gewicht = gewicht,
-            halter = halter,
             )
     
     @property
@@ -124,7 +104,7 @@ class Set:
             repetitie_aantal = -1
         elif "-" in _repetitie_aantal and "+" in _repetitie_aantal:
             repetitie_type = RepetitieType.BEREIK_AMRAP
-            repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-").replace("+", "")[1]))
+            repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1].replace("+", "")))
         elif "-" in _repetitie_aantal:
             repetitie_type = RepetitieType.BEREIK
             repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1]))
@@ -194,7 +174,7 @@ class Set:
                 st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
         
         expander = st.expander(
-            label = f"set {self.set_nummer}: {self.repetitie_tekst}× {f"{self.halter.massa}".replace(".", ",")} kg ({self.setcode})",
+            label = f"set {self.set_nummer}: {self.setcode}",
             expanded = st.session_state[f"expander_{oefening}_{self.set_nummer}"],
             )
         
@@ -234,6 +214,33 @@ class Oefening:
     
     oefening: OefeningEnum
     sets: Dict[str, List[Set]]
+    
+    def __post_init__(self):
+        
+        oefening_type = self.oefening.__class__
+        
+        if oefening_type in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
+            
+            halterstangen = Register().halterstangen.filter(halter_type = HALTERS[self.oefening.__class__.__name__])
+            
+            if len(halterstangen) == 1:
+                halterstang = list(halterstangen.values())[0]
+                halterschijven = list(Register().halterschijven.filter(diameter = halterstang.diameter).values())
+            else:
+                raise NotImplementedError("momenteel wordt maximaal één halterstang ondersteund per halter_type")
+            
+            gewichten = [set.gewicht for setgroep in self.sets.values() for set in setgroep]
+            
+            halters = halterstang.optimaal_laden(
+                gewicht_per_set = gewichten,
+                halterschijven = halterschijven,
+                )
+            
+            for set, halter in zip([set for setgroep in self.sets.values() for set in setgroep], halters):
+                set.halter = halter
+        
+        else:
+            halter = None
     
     @classmethod
     def nieuw(
@@ -397,3 +404,8 @@ class Sessie:
             resultaten.append(oefening_dict)
         
         return resultaten
+    
+    def paneel(self):
+        
+        for oefening in self.oefeningen:
+            oefening.paneel()

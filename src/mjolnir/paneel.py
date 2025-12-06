@@ -15,9 +15,10 @@ def paneel():
     if "sessie" not in st.session_state:
         st.session_state["sessie"] = Sessie.huidig()
     
-    for oefening in st.session_state["sessie"].oefeningen:
-        oefening.paneel()
+    st.session_state["sessie"].paneel()
     
     if st.button("opslaan", key = "opslaan"):
         st.session_state["sessie"].opslaan()
         st.session_state["register"].opslaan()
+        
+    # TODO: optimaal laden al berekenen bij plannen sessie
