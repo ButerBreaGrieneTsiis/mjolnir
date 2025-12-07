@@ -324,6 +324,9 @@ class Sessie:
         
         schemas = Register().schema.filter(status = Status.HUIDIG)
         
+        if len(schemas) == 0:
+            raise RuntimeError("er zijn geen sessies gepland")
+        
         schema_uuid = list(schemas.keys())[0]
         schema = list(schemas.values())[0]
         
