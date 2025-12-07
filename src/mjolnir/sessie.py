@@ -20,16 +20,15 @@ class Set:
     set_nummer: int
     
     set_type: SetType
-    set_aantal: int
     
     repetitie_type: RepetitieType
     repetitie_aantal: int | Tuple[int, int]
     
     gewicht_type: GewichtType
     gewicht: float | None
-    
     halter: Halter | None = None
     
+    set_gedaan: bool = False
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
     
@@ -51,7 +50,6 @@ class Set:
             oefening = oefening,
             set_nummer = set_nummer,
             set_type = set_type,
-            set_aantal = set_aantal,
             repetitie_type = repetitie_type,
             repetitie_aantal = repetitie_aantal,
             gewicht_type = gewicht_type,
@@ -158,11 +156,15 @@ class Set:
         
         oefening = self.oefening.value[0].replace(" ", "_")
         
+        # status expander van deze set
         if f"expander_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"expander_{oefening}_{self.set_nummer}"] = True
+        
+        # status expander van de volgende set
         if f"expander_{oefening}_{self.set_nummer + 1}" not in st.session_state:
             st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = False
         
+        # aantal repetities van deze set
         if f"repetities_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"repetities_{oefening}_{self.set_nummer}"] = aantal_repetities
         
@@ -170,11 +172,18 @@ class Set:
             if st.session_state[f"knop_{oefening}_{self.set_nummer}"]:
                 self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
                 self.gewicht_gedaan = self.halter.massa
+                self.set_gedaan = True
                 st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
                 st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
         
+        if f"label_{oefening}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"label_{oefening}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.setcode}"
+        else:
+            if self.set_gedaan:
+                st.session_state[f"label_{oefening}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.setcode}"
+        
         expander = st.expander(
-            label = f"set {self.set_nummer}: {self.setcode}",
+            label = st.session_state[f"label_{oefening}_{self.set_nummer}"],
             expanded = st.session_state[f"expander_{oefening}_{self.set_nummer}"],
             )
         

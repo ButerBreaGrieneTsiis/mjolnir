@@ -1,3 +1,7 @@
+import keyboard
+import os
+import psutil
+
 import streamlit as st
 
 from mjolnir.register import Register
@@ -17,8 +21,12 @@ def paneel():
     
     st.session_state["sessie"].paneel()
     
+    # opslaan toets enkel zichtbaar bij afronden alle sets
     if st.button("opslaan", key = "opslaan"):
         st.session_state["sessie"].opslaan()
         st.session_state["register"].opslaan()
-        
-    # TODO: optimaal laden al berekenen bij plannen sessie
+        # time.sleep(5)
+        keyboard.press_and_release("ctrl+w")
+        pid = os.getpid()
+        p = psutil.Process(pid)
+        p.terminate()
