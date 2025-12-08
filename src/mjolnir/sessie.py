@@ -10,7 +10,7 @@ from grienetsiis import opslaan_json
 import streamlit as st
 
 from mjolnir.belading import Halter
-from mjolnir.enums import OefeningEnum, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, Status, ENUMS, HALTERS
+from mjolnir.enums import OefeningEnum, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, SetGroepType, Status, ENUMS, HALTERS
 from mjolnir.register import Register
 
 
@@ -142,7 +142,10 @@ class Set:
         
         return gewicht_type, gewicht
         
-    def paneel(self):
+    def paneel(
+        self,
+        kolom,
+        ):
         
         if self.repetitie_type == RepetitieType.AANTAL:
             max_repetities = self.repetitie_aantal
@@ -185,7 +188,7 @@ class Set:
             if self.set_gedaan:
                 st.session_state[f"label_{oefening}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.setcode}"
         
-        expander = st.expander(
+        expander = kolom.expander(
             label = st.session_state[f"label_{oefening}_{self.set_nummer}"],
             expanded = st.session_state[f"expander_{oefening}_{self.set_nummer}"],
             )
@@ -302,16 +305,23 @@ class Oefening:
             )
     
     @property
+    def hoofdoefening(self) -> bool:
+        return SetGroepType.OVERIG.value not in self.sets
+    
+    @property
     def volume(self) -> float:
         ...
     
-    def paneel(self):
+    def paneel(
+        self,
+        kolom,
+        ):
         
-        st.write(self.oefening.value[0].upper())
+        kolom.write(self.oefening.value[0].upper())
         for setgroep, sets in self.sets.items():
-            st.write(setgroep)
+            kolom.write(setgroep)
             for set in sets:
-                set.paneel()
+                set.paneel(kolom)
 
 @dataclass
 class Sessie:
@@ -420,14 +430,37 @@ class Sessie:
     
     def paneel(self):
         
-        for oefening in self.oefeningen:
-            oefening.paneel()
+        aantal_hoofdoefeningen = sum(oefening.hoofdoefening for oefening in self.oefeningen)
         
-        # opslaan toets enkel zichtbaar bij afronden alle sets
-        if st.button("opslaan", key = "opslaan"):
+        top = st.empty()
+        
+        kolommen = st.columns(aantal_hoofdoefeningen + 1)
+        
+        kolom_nummer = 0
+        
+        for oefening in self.oefeningen:
+            if oefening.hoofdoefening:
+                kolom = kolommen[kolom_nummer]
+                kolom_nummer += 1
+            else:
+                kolom = kolommen[-1]
+            
+            oefening.paneel(kolom)
+        
+        if "opslaan_uitgeschakeld" not in st.session_state:
+            st.session_state["opslaan_uitgeschakeld"] = True
+        else:
+            st.session_state["opslaan_uitgeschakeld"] = not all(set.set_gedaan for oefening in self.oefeningen for setgroep in oefening.sets.values() for set in setgroep)
+        
+        if top.button(
+            label = "opslaan en afsluiten",
+            key = "opslaan",
+            disabled = st.session_state["opslaan_uitgeschakeld"],
+            ):
+            
             st.session_state["sessie"].opslaan()
             st.session_state["register"].opslaan()
-            # time.sleep(5)
+            
             keyboard.press_and_release("ctrl+w")
             pid = os.getpid()
             p = psutil.Process(pid)
