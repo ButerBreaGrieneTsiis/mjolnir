@@ -26,20 +26,19 @@ class Subregister(dict):
     
     def filter(
         self,
+        inclusief: bool = True,
         **filters,
         ) -> Subregister | Tuple[str, GeregistreerdObject]:
         
         subregister = Subregister(type = self.type)
         
         for uuid, geregistreerd_object in self.items():
-            for sleutel, waardes in filters.items():
-                if isinstance(waardes, list):
-                    for waarde in waardes:
-                        if getattr(geregistreerd_object, sleutel, None) == waarde:
-                            subregister[uuid] = geregistreerd_object
-                else:
-                    if getattr(geregistreerd_object, sleutel, None) == waardes:
-                        subregister[uuid] = geregistreerd_object
+            if inclusief:
+                if all((getattr(geregistreerd_object, sleutel, None) == waardes if not isinstance(waardes, list) else (getattr(geregistreerd_object, sleutel, None) == waarde for waarde in waardes)) for sleutel, waardes in filters.items()):
+                    subregister[uuid] = geregistreerd_object
+            else:
+                if any((getattr(geregistreerd_object, sleutel, None) == waardes if not isinstance(waardes, list) else (getattr(geregistreerd_object, sleutel, None) == waarde for waarde in waardes)) for sleutel, waardes in filters.items()):
+                    subregister[uuid] = geregistreerd_object
         
         return subregister
     
