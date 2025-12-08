@@ -218,12 +218,15 @@ class Set:
             )
         
         return expander
-        
-        
-    # @property
-    # def volume(self) -> float:
-    #     ...
-
+    
+    @property
+    def volume(self) -> float:
+        return self.gewicht_gedaan * self.repetitie_gedaan
+    
+    @property
+    def e1rm(self) -> float:
+        return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
+    
 @dataclass
 class Oefening:
     
@@ -310,18 +313,23 @@ class Oefening:
     
     @property
     def volume(self) -> float:
-        ...
+        return sum(set.volume for setgroep in self.sets.values() for set in setgroep)
+    
+    @property
+    def e1rm(self) -> float:
+        return max(set.e1rm for setgroep in self.sets.values() for set in setgroep)
     
     def paneel(
         self,
         kolom,
         ):
         
-        kolom.write(self.oefening.value[0].upper())
+        titel = kolom.empty()
         for setgroep, sets in self.sets.items():
             kolom.write(setgroep)
             for set in sets:
                 set.paneel(kolom)
+        titel.write(f"{self.oefening.value[0].upper()} (volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)")
 
 @dataclass
 class Sessie:
@@ -436,15 +444,15 @@ class Sessie:
         
         kolommen = st.columns(aantal_hoofdoefeningen + 1)
         
-        kolom_nummer = 0
+        kolommen[-1].write("AANVULLENDE OEFENINGEN")
         
+        kolom_nummer = 0
         for oefening in self.oefeningen:
             if oefening.hoofdoefening:
                 kolom = kolommen[kolom_nummer]
                 kolom_nummer += 1
             else:
                 kolom = kolommen[-1]
-            
             oefening.paneel(kolom)
         
         if "opslaan_uitgeschakeld" not in st.session_state:
