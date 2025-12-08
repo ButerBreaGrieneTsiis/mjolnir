@@ -4,6 +4,8 @@ from mjolnir.register import Register
 from mjolnir.sessie import Sessie
 
 
+st.set_page_config(layout = "wide")
+
 def paneel():
     
     if "register" not in st.session_state:
