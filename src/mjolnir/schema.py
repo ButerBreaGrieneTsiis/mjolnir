@@ -272,7 +272,12 @@ class Schema(GeregistreerdObject):
                             
                             break
                     
-                    sjabloon_uuid = Register().sjablonen.filter(weken = [0, cls.weken]).kiezen()
+                    setgroep_type = invoer_kiezen(
+                        beschrijving = "oefening",
+                        keuzes = {enum.value: enum for enum in SetGroepType},
+                        )
+                    
+                    sjabloon_uuid = Register().sjablonen.filter(weken = [0, cls.weken], setgroep_type = setgroep_type).kiezen()
                     
                     oefening_sjablonen["sjablonen"].append(sjabloon_uuid)
                     
