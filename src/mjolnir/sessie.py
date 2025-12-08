@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 import datetime as dt
+import keyboard
+import os
 from pathlib import Path
+import psutil
 from typing import Any, Dict, List, Tuple
 
 from grienetsiis import opslaan_json
@@ -419,3 +422,13 @@ class Sessie:
         
         for oefening in self.oefeningen:
             oefening.paneel()
+        
+        # opslaan toets enkel zichtbaar bij afronden alle sets
+        if st.button("opslaan", key = "opslaan"):
+            st.session_state["sessie"].opslaan()
+            st.session_state["register"].opslaan()
+            # time.sleep(5)
+            keyboard.press_and_release("ctrl+w")
+            pid = os.getpid()
+            p = psutil.Process(pid)
+            p.terminate()
