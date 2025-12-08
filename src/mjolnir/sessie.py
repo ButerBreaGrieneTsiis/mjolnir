@@ -325,7 +325,10 @@ class Sessie:
         schemas = Register().schema.filter(status = Status.HUIDIG)
         
         if len(schemas) == 0:
-            raise RuntimeError("er zijn geen sessies gepland")
+            print("er zijn geen sessies gepland")
+            Register().schema.nieuw()
+            Register().opslaan()
+            schemas = Register().schema.filter(status = Status.HUIDIG)
         
         schema_uuid = list(schemas.keys())[0]
         schema = list(schemas.values())[0]
@@ -336,11 +339,6 @@ class Sessie:
                     week = int(week_tekst.replace("week", "").strip())
                     dag = int(dag_tekst.replace("dag", "").strip())
                     break
-            else:
-                continue
-            break
-        else:
-            raise RuntimeError("geen geplande sessies staan")
         
         oefeningen = []
         trainingsschema = schema.oefeningen[f"dag {dag}"]
