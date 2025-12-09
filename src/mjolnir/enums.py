@@ -55,20 +55,20 @@ class OefeningDumbbell(OefeningEnum):
     
     LATERAL_RAISE = ("lateral raise", [])
 
-class OefeningType(Enum):
-    
-    LICHAAMSGEWICHT = ("lichaamsgewicht", OefeningLichaamsgewicht)
-    GEWICHT = ("gewicht", OefeningGewicht)
-    BARBELL = ("barbell", OefeningBarbell)
-    EZ_CURL = ("ez curl", OefeningCurl)
-    DUMBBELL = ("dumbbell", OefeningDumbbell)
-
 class GewichtType(Enum):
     
     GEWICHTLOOS = "geen gewicht"
     GEWICHT = "vast gewicht"
     PERCENTAGE = "percentage gewicht"
     VRIJ = "vrij gewicht"
+
+class OefeningType(Enum):
+    
+    LICHAAMSGEWICHT = ("lichaamsgewicht", OefeningLichaamsgewicht, [GewichtType.GEWICHTLOOS])
+    GEWICHT = ("gewicht", OefeningGewicht, [GewichtType.GEWICHT, GewichtType.VRIJ])
+    BARBELL = ("barbell", OefeningBarbell, [GewichtType.GEWICHT, GewichtType.PERCENTAGE, GewichtType.VRIJ])
+    EZ_CURL = ("ez curl", OefeningCurl, [GewichtType.GEWICHT, GewichtType.VRIJ])
+    DUMBBELL = ("dumbbell", OefeningDumbbell, [GewichtType.GEWICHT, GewichtType.VRIJ])
 
 class RepetitieType(Enum):
     
