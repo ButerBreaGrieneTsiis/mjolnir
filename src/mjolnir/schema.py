@@ -57,32 +57,16 @@ class Sjabloon(GeregistreerdObject):
                     set_tekst = "?x"
                 elif set_type == SetType.AANTAL:
                     set_tekst = f"{invoer_validatie(
-                    beschrijving = "aantal sets",
-                    type = int,
-                    bereik = (1, 10),
-                    )}x"
-                elif set_type == SetType.AMRAP:
+                        beschrijving = "aantal sets",
+                        type = int,
+                        bereik = (1, 10),
+                        )}x"
+                else:
                     set_tekst = f"{invoer_validatie(
                         beschrijving = "minimaal aantal sets",
                         type = int,
                         bereik = (1, 99),
                         )}+x"
-                else:
-                    sets_minimaal = invoer_validatie(
-                        beschrijving = "minimaal aantal sets",
-                        type = int,
-                        bereik = (1, 99),
-                        )
-                    sets_maximaal = invoer_validatie(
-                        beschrijving = "maximaal aantal sets",
-                        type = int,
-                        bereik = (1, 99),
-                        )
-                    
-                    if set_type == SetType.BEREIK:
-                        set_tekst = f"{sets_minimaal}-{sets_maximaal}x"
-                    else:
-                        set_tekst = f"{sets_minimaal}-{sets_maximaal}+x"
                 
                 repetitie_type = invoer_kiezen(
                     beschrijving = "repetitie type",

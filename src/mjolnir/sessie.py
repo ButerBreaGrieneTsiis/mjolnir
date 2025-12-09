@@ -10,7 +10,7 @@ from grienetsiis import opslaan_json
 import streamlit as st
 
 from mjolnir.belading import Halter
-from mjolnir.enums import OefeningEnum, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, SetGroepType, Status, ENUMS, HALTERS
+from mjolnir.enums import OefeningEnum, OefeningLichaamsgewicht, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, SetGroepType, Status, ENUMS, HALTERS
 from mjolnir.register import Register
 
 
@@ -31,7 +31,7 @@ class Set:
     gewicht: float | None
     halter: Halter | None = None
     
-    set_gedaan: bool = False
+    afgerond: bool = False
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
     
@@ -77,12 +77,6 @@ class Set:
         if "?" in _set_aantal:
             set_type = SetType.VRIJ
             set_aantal = -1
-        elif "-" in _set_aantal and "+" in _set_aantal:
-            set_type = SetType.BEREIK_AMSAP
-            set_aantal = (int(_set_aantal.split("-")[0]), int(_set_aantal.split("-").replace("+", "")[1]))
-        elif "-" in _set_aantal:
-            set_type = SetType.BEREIK
-            set_aantal = (int(_set_aantal.split("-")[0]), int(_set_aantal.split("-")[1]))
         elif "+" in _set_aantal:
             set_type = SetType.AMSAP
             set_aantal = int(_set_aantal.replace("+", ""))
@@ -178,14 +172,14 @@ class Set:
             if st.session_state[f"knop_{oefening}_{self.set_nummer}"]:
                 self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
                 self.gewicht_gedaan = self.halter.massa
-                self.set_gedaan = True
+                self.afgerond = True
                 st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
                 st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
         
         if f"label_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"label_{oefening}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.setcode}"
         else:
-            if self.set_gedaan:
+            if self.afgerond:
                 st.session_state[f"label_{oefening}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.setcode}"
         
         expander = kolom.expander(
@@ -220,18 +214,25 @@ class Set:
         return expander
     
     @property
-    def volume(self) -> float:
-        return self.gewicht_gedaan * self.repetitie_gedaan
+    def volume(self) -> float | None:
+        if self.gewicht_type == GewichtType.GEWICHTLOOS:
+            return None
+        else:
+            return self.gewicht_gedaan * self.repetitie_gedaan
     
     @property
-    def e1rm(self) -> float:
-        return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
-    
+    def e1rm(self) -> float | None:
+        if self.gewicht_type == GewichtType.GEWICHTLOOS:
+            return None
+        else:
+            return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
+
 @dataclass
 class Oefening:
     
     oefening: OefeningEnum
     sets: Dict[str, List[Set]]
+    trainingsgewicht: float = None
     
     def __post_init__(self):
         
@@ -284,7 +285,7 @@ class Oefening:
             
             for setcode in setcodes:
                 
-                _, set_aantal = Set.sets_uit_setcode(setcode)
+                set_type, set_aantal = Set.sets_uit_setcode(setcode)
                 
                 for _ in range(set_aantal):
                 
@@ -302,22 +303,43 @@ class Oefening:
                     
                     sets[sjabloon.setgroep_type.value].append(set)
         
+        trainingsgewicht = next((trainingsgewicht_dict["trainingsgewicht"] for trainingsgewicht_dict in trainingsgewichten if trainingsgewicht_dict["oefening"] == oefening), None)
+        
         return cls(
             oefening = oefening,
             sets = sets,
+            trainingsgewicht = trainingsgewicht,
             )
     
     @property
     def hoofdoefening(self) -> bool:
+        print(self.sets.keys())
         return SetGroepType.OVERIG.value not in self.sets
     
     @property
-    def volume(self) -> float:
-        return sum(set.volume for setgroep in self.sets.values() for set in setgroep)
+    def volume(self) -> float | None:
+        if self.oefening.__class__ == OefeningLichaamsgewicht:
+            return None
+        else:
+            return sum(set.volume for setgroep in self.sets.values() for set in setgroep)
     
     @property
-    def e1rm(self) -> float:
-        return max(set.e1rm for setgroep in self.sets.values() for set in setgroep)
+    def e1rm(self) -> float | None:
+        if self.oefening.__class__ == OefeningLichaamsgewicht:
+            return None
+        else:
+            return max(set.e1rm for setgroep in self.sets.values() for set in setgroep)
+    
+    @property
+    def titel(self) -> str:
+        
+        if self.volume is None and self.e1rm is None:
+            return f"{self.oefening.value[0].upper()}"
+        
+        if self.trainingsgewicht is None:
+            return f"{self.oefening.value[0].upper()} (volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
+        else:
+            return f"{self.oefening.value[0].upper()} (TM: {self.trainingsgewicht:.1f} kg, volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
     
     def paneel(
         self,
@@ -329,7 +351,9 @@ class Oefening:
             kolom.write(setgroep)
             for set in sets:
                 set.paneel(kolom)
-        titel.write(f"{self.oefening.value[0].upper()} (volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)")
+            # TODO: knop toevoegen voor meer sets
+        
+        titel.write(self.titel)
 
 @dataclass
 class Sessie:
@@ -343,16 +367,24 @@ class Sessie:
     @classmethod
     def huidig(cls):
         
-        schemas = Register().schema.filter(status = Status.HUIDIG)
+        schemas_huidig = Register().schema.filter(status = Status.HUIDIG)
+        schemas_gepland = Register().schema.filter(status = Status.GEPLAND)
         
-        if len(schemas) == 0:
+        if len(schemas_huidig) == 0 and len(schemas_gepland) == 0:
             print("er zijn geen sessies gepland")
             Register().schema.nieuw()
             Register().opslaan()
             schemas = Register().schema.filter(status = Status.HUIDIG)
-        
-        schema_uuid = list(schemas.keys())[0]
-        schema = list(schemas.values())[0]
+            schema_uuid = list(schemas.keys())[0]
+            schema = list(schemas.values())[0]
+        else:
+            if len(schemas_huidig) == 0:
+                schema_uuid = list(schemas_gepland.keys())[0]
+                schema = list(schemas_gepland.values())[0]
+                schema.status = Status.HUIDIG
+            else:
+                schema_uuid = list(schemas_huidig.keys())[0]
+                schema = list(schemas_huidig.values())[0]
         
         for week_tekst, sessie_week in schema.sessies.items():
             for dag_tekst, sessie_dag in sessie_week.items():
@@ -438,10 +470,9 @@ class Sessie:
     
     def paneel(self):
         
-        aantal_hoofdoefeningen = sum(oefening.hoofdoefening for oefening in self.oefeningen)
-        
         top = st.empty()
         
+        aantal_hoofdoefeningen = sum(oefening.hoofdoefening for oefening in self.oefeningen)
         kolommen = st.columns(aantal_hoofdoefeningen + 1)
         
         kolommen[-1].write("AANVULLENDE OEFENINGEN")
@@ -458,7 +489,7 @@ class Sessie:
         if "opslaan_uitgeschakeld" not in st.session_state:
             st.session_state["opslaan_uitgeschakeld"] = True
         else:
-            st.session_state["opslaan_uitgeschakeld"] = not all(set.set_gedaan for oefening in self.oefeningen for setgroep in oefening.sets.values() for set in setgroep)
+            st.session_state["opslaan_uitgeschakeld"] = not all(set.afgerond for oefening in self.oefeningen for setgroep in oefening.sets.values() for set in setgroep)
         
         if top.button(
             label = "opslaan en afsluiten",

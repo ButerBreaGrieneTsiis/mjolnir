@@ -81,9 +81,7 @@ class RepetitieType(Enum):
 class SetType(Enum):
     
     AANTAL = "aantal"
-    BEREIK = "bereik"
     AMSAP = "amsap"
-    BEREIK_AMSAP = "amsap met bereik"
     VRIJ = "vrij"
 
 class SetGroepType(Enum):
