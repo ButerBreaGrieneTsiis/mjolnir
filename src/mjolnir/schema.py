@@ -13,13 +13,15 @@ class Sjabloon(GeregistreerdObject):
     
     naam: str
     setgroep_type: SetGroepType
+    gewicht_type: GewichtType
+    set_type: SetType
     weken: int = 0
     sets: Dict[str, List[str]] = None
     
     BESTANDSNAAM: ClassVar[str] = "sjablonen"
     
     def __repr__(self) -> str:
-        return f"{self.naam} ({self.setgroep_type.value})"
+        return f"{self.naam} (setgroep {self.setgroep_type.value}, gewichttype {self.gewicht_type.value})"
     
     @classmethod
     def nieuw(
@@ -29,7 +31,10 @@ class Sjabloon(GeregistreerdObject):
         
         cls = super().nieuw(velden)
         
-        def sets_maken() -> List[str]:
+        def sets_maken(
+            gewicht_type: GewichtType,
+            set_type: SetType,
+            ) -> List[str]:
             
             sets = []
             
@@ -47,11 +52,6 @@ class Sjabloon(GeregistreerdObject):
                         ):
                         
                         break
-                
-                set_type = invoer_kiezen(
-                    beschrijving = "set type",
-                    keuzes = {set_type.value: set_type for set_type in SetType},
-                    )
                 
                 if set_type == SetType.VRIJ:
                     set_tekst = "?x"
@@ -120,11 +120,6 @@ class Sjabloon(GeregistreerdObject):
                     else:
                         repetitie_tekst = f"{repetities_minimaal}-{repetities_maximaal}+"
                 
-                gewicht_type = invoer_kiezen(
-                    beschrijving = "gewicht type",
-                    keuzes = {gewicht_type.value: gewicht_type for gewicht_type in GewichtType},
-                    )
-                
                 if gewicht_type == GewichtType.GEWICHTLOOS:
                     massa = ""
                 elif gewicht_type == GewichtType.GEWICHT:
@@ -165,13 +160,13 @@ class Sjabloon(GeregistreerdObject):
         
         if weken == 0:
             print(f"\nkies de sets voor elke week")
-            sets = sets_maken()
+            sets = sets_maken(cls.gewicht_type, cls.set_type)
             sets_per_week[f"week {weken}"] = sets
         else:
             for week in range(1, weken + 1):
                 
                 print(f"\nkies de sets voor week {week}")
-                sets = sets_maken()
+                sets = sets_maken(cls.gewicht_type, cls.set_type)
                 sets_per_week[f"week {week}"] = sets
         
         cls.weken = weken
@@ -242,12 +237,12 @@ class Schema(GeregistreerdObject):
                 
                 oefening_type = invoer_kiezen(
                     beschrijving = "oefeningstype",
-                    keuzes = {enum.value[0]: enum.value[1] for enum in OefeningType},
+                    keuzes = {enum.value[0]: enum for enum in OefeningType},
                     )
                 
                 oefening = invoer_kiezen(
                     beschrijving = "oefening",
-                    keuzes = {enum.value[0]: enum for enum in oefening_type},
+                    keuzes = {enum.value[0]: enum for enum in oefening_type.value[1]},
                     )
                 
                 print(f"\n>>> oefening \"{oefening.value[0]}\" gekozen")
@@ -277,11 +272,16 @@ class Schema(GeregistreerdObject):
                         keuzes = {enum.value: enum for enum in SetGroepType},
                         )
                     
-                    sjabloon_uuid = Register().sjablonen.filter(weken = [0, cls.weken], setgroep_type = setgroep_type).kiezen()
+                    sjabloon_uuid = Register().sjablonen.filter(
+                        weken = [0, cls.weken],
+                        setgroep_type = setgroep_type,
+                        gewicht_type = oefening_type.value[2],
+                        ).kiezen()
+                    sjabloon = Register().sjablonen[sjabloon_uuid]
                     
                     oefening_sjablonen["sjablonen"].append(sjabloon_uuid)
                     
-                    if any(["%" in set for week in Register().sjablonen[sjabloon_uuid].sets.values() for set in week]):
+                    if sjabloon.gewicht_type == GewichtType.PERCENTAGE:
                         
                         if not any([oefening == trainingsgewicht["oefening"] for trainingsgewicht in trainingsgewichten]):
                         
