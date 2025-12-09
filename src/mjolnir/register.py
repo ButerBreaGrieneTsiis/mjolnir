@@ -33,11 +33,28 @@ class Subregister(dict):
         subregister = Subregister(type = self.type)
         
         for uuid, geregistreerd_object in self.items():
+            
+            masker = []
+            
+            for sleutel, waardes in filters.items():
+                if isinstance(waardes, list):
+                    for waarde in waardes:
+                        if getattr(geregistreerd_object, sleutel, None) == waarde:
+                            masker.append(True)
+                            break
+                    else:
+                        masker.append(False)
+                else:
+                    if getattr(geregistreerd_object, sleutel, None) == waardes:
+                        masker.append(True)
+                    else:
+                        masker.append(False)
+            
             if inclusief:
-                if all((getattr(geregistreerd_object, sleutel, None) == waardes if not isinstance(waardes, list) else (getattr(geregistreerd_object, sleutel, None) == waarde for waarde in waardes)) for sleutel, waardes in filters.items()):
+                if all(masker):
                     subregister[uuid] = geregistreerd_object
             else:
-                if any((getattr(geregistreerd_object, sleutel, None) == waardes if not isinstance(waardes, list) else (getattr(geregistreerd_object, sleutel, None) == waarde for waarde in waardes)) for sleutel, waardes in filters.items()):
+                if any(masker):
                     subregister[uuid] = geregistreerd_object
         
         return subregister
