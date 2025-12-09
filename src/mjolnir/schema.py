@@ -21,7 +21,7 @@ class Sjabloon(GeregistreerdObject):
     BESTANDSNAAM: ClassVar[str] = "sjablonen"
     
     def __repr__(self) -> str:
-        return f"{self.naam} (setgroep {self.setgroep_type.value}, gewichttype {self.gewicht_type.value})"
+        return f"{self.naam} (setgroep \"{self.setgroep_type.value}\", gewichttype \"{self.gewicht_type.value}\")"
     
     @classmethod
     def nieuw(
@@ -268,7 +268,7 @@ class Schema(GeregistreerdObject):
                             break
                     
                     setgroep_type = invoer_kiezen(
-                        beschrijving = "oefening",
+                        beschrijving = "setgroep",
                         keuzes = {enum.value: enum for enum in SetGroepType},
                         )
                     
