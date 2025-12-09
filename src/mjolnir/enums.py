@@ -57,10 +57,10 @@ class OefeningDumbbell(OefeningEnum):
 
 class GewichtType(Enum):
     
-    GEWICHTLOOS = "geen gewicht"
-    GEWICHT = "vast gewicht"
-    PERCENTAGE = "percentage gewicht"
-    VRIJ = "vrij gewicht"
+    GEWICHTLOOS = "gewichtloos"
+    GEWICHT = "vast"
+    PERCENTAGE = "percentage"
+    VRIJ = "vrij"
 
 class OefeningType(Enum):
     
