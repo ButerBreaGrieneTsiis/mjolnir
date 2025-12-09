@@ -95,7 +95,11 @@ class Register(dict, metaclass = Singleton):
     ENUMS: Dict[str, Enum] = ENUMS
     
     def __getattr__(self, naam):
-        return self[naam]
+        if naam in self:
+            return self[naam]
+        else:
+            self[naam] = Subregister(type = self.DECODERS[naam]["class"])
+            return self[naam]
     
     @classmethod
     def openen(cls):
