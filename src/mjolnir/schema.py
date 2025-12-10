@@ -239,7 +239,7 @@ class Schema(GeregistreerdObject):
                 while True:
                     
                     if len(oefening_sjablonen["sjablonen"]) > 0:
-                        print(f"\nsjablonen voor {oefening.value}")
+                        print(f"\nsjablonen voor {oefening.value[0]}")
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                         
