@@ -1,3 +1,4 @@
+from copy import copy
 from dataclasses import dataclass
 import datetime as dt
 import keyboard
@@ -76,7 +77,7 @@ class Set:
         
         if "?" in _set_aantal:
             set_type = SetType.VRIJ
-            set_aantal = -1
+            set_aantal = 0
         elif "+" in _set_aantal:
             set_type = SetType.AMSAP
             set_aantal = int(_set_aantal.replace("+", ""))
@@ -96,7 +97,7 @@ class Set:
         
         if "?" in _repetitie_aantal:
             repetitie_type = RepetitieType.VRIJ
-            repetitie_aantal = -1
+            repetitie_aantal = 0
         elif "-" in _repetitie_aantal and "+" in _repetitie_aantal:
             repetitie_type = RepetitieType.BEREIK_AMRAP
             repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1].replace("+", "")))
@@ -115,10 +116,10 @@ class Set:
     @staticmethod
     def gewicht_uit_setcode(setcode: str, trainingsgewichten, oefening) -> Tuple[GewichtType, int]:
         
-        if "x" in setcode:
+        if "@" in setcode:
             _gewicht_aantal = setcode.split("@")[1]
         else:
-            _gewicht_aantal = setcode.split("@")[1]
+            _gewicht_aantal = ""
         
         if "?" in _gewicht_aantal:
             gewicht_type = GewichtType.VRIJ
@@ -170,9 +171,17 @@ class Set:
         
         if f"knop_{oefening}_{self.set_nummer}" in st.session_state:
             if st.session_state[f"knop_{oefening}_{self.set_nummer}"]:
+                
                 self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
-                self.gewicht_gedaan = self.halter.massa
+                
+                if self.oefening.__class__ in [OefeningBarbell, OefeningCurl, OefeningDumbbell]: 
+                    if self.halter is not None:
+                        self.gewicht_gedaan = self.halter.massa
+                elif self.gewicht_type != GewichtType.GEWICHTLOOS:
+                    raise NotImplementedError
+                
                 self.afgerond = True
+                
                 st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
                 st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
         
@@ -187,16 +196,18 @@ class Set:
             expanded = st.session_state[f"expander_{oefening}_{self.set_nummer}"],
             )
         
-        kolom1, kolom2, kolom3 = expander.columns([0.2, 0.2, 0.6])
+        kolom_repetities, kolom_gewicht, kolom_halter = expander.columns([0.2, 0.2, 0.6])
         
-        kolom1.markdown("**repetities**")
-        kolom1.markdown(f"{self.repetitie_tekst} ({self.repetitie_type.value})")
+        kolom_repetities.markdown("**repetities**")
+        kolom_repetities.markdown(f"{self.repetitie_tekst} ({self.repetitie_type.value})")
         
-        kolom2.markdown("**gewicht**")
-        kolom2.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
+        if self.gewicht_type == GewichtType.GEWICHT or self.gewicht_type == GewichtType.PERCENTAGE:
+            kolom_gewicht.markdown("**gewicht**")
+            kolom_gewicht.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
         
-        kolom3.markdown("**halter**")
-        kolom3.markdown(self.halter)
+        if self.oefening.__class__ in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
+            kolom_halter.markdown("**halter**")
+            kolom_halter.markdown(self.halter)
         
         expander.slider(
             label = "repetities",
@@ -228,10 +239,41 @@ class Set:
             return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
 
 @dataclass
+class SetKnop:
+    
+    oefening: "Oefening"
+    setgroep: str
+    set: Set
+    set_nummer: int
+    
+    def toevoegen_set(self):
+        
+        self.set_nummer += 1
+        
+        set = copy(self.set)
+        set.set_nummer = self.set_nummer
+        
+        self.oefening.sets[self.setgroep].append(set)
+    
+    def paneel(
+        self,
+        kolom,
+        ):
+        
+        oefening = self.oefening.oefening.value[0].replace(" ", "_")
+        
+        kolom.button(
+            label = "set toevoegen",
+            key = f"setknop_{oefening}_{self.setgroep}",
+            on_click = self.toevoegen_set,
+            )
+
+@dataclass
 class Oefening:
     
     oefening: OefeningEnum
     sets: Dict[str, List[Set]]
+    setknoppen: Dict[str, SetKnop] = None
     trainingsgewicht: float = None
     
     def __post_init__(self):
@@ -248,18 +290,37 @@ class Oefening:
             else:
                 raise NotImplementedError("momenteel wordt maximaal één halterstang ondersteund per halter_type")
             
-            gewichten = [set.gewicht for setgroep in self.sets.values() for set in setgroep]
+            gewichten = [set.gewicht for setgroep in self.sets.values() for set in setgroep if set.gewicht is not None]
             
-            halters = halterstang.optimaal_laden(
-                gewicht_per_set = gewichten,
-                halterschijven = halterschijven,
-                )
-            
-            for set, halter in zip([set for setgroep in self.sets.values() for set in setgroep], halters):
-                set.halter = halter
+            if len(gewichten) > 0:
+                
+                halters = halterstang.optimaal_laden(
+                    gewicht_per_set = gewichten,
+                    halterschijven = halterschijven,
+                    )
+                
+                for set, halter in zip([set for setgroep in self.sets.values() for set in setgroep], halters):
+                    set.halter = halter
         
         else:
             halter = None
+        
+        setknoppen = {}
+        
+        for setgroep, sets in self.sets.items():
+            
+            if len(sets) == 1 and sets[0].set_type in [SetType.AMSAP, SetType.VRIJ]:
+                
+                setknop = SetKnop(
+                    oefening = self,
+                    setgroep = setgroep,
+                    set = sets[0],
+                    set_nummer = sets[0].set_nummer,
+                    )
+                
+                setknoppen[setgroep] = setknop
+        
+        self.setknoppen = setknoppen
     
     @classmethod
     def nieuw(
@@ -287,8 +348,23 @@ class Oefening:
                 
                 set_type, set_aantal = Set.sets_uit_setcode(setcode)
                 
-                for _ in range(set_aantal):
+                if sjabloon.setgroep_type.value not in sets:
+                    sets[sjabloon.setgroep_type.value] = []
                 
+                if set_type == SetType.AANTAL or set_type == SetType.AMSAP:
+                    for _ in range(set_aantal):
+                    
+                        set_nummer += 1
+                        
+                        set = Set.van_setcode(
+                            setcode = setcode,
+                            set_nummer = set_nummer,
+                            oefening = oefening,
+                            trainingsgewichten = trainingsgewichten,
+                            )
+                        
+                        sets[sjabloon.setgroep_type.value].append(set)
+                else:
                     set_nummer += 1
                     
                     set = Set.van_setcode(
@@ -297,9 +373,6 @@ class Oefening:
                         oefening = oefening,
                         trainingsgewichten = trainingsgewichten,
                         )
-                    
-                    if sjabloon.setgroep_type.value not in sets:
-                        sets[sjabloon.setgroep_type.value] = []
                     
                     sets[sjabloon.setgroep_type.value].append(set)
         
@@ -313,7 +386,6 @@ class Oefening:
     
     @property
     def hoofdoefening(self) -> bool:
-        print(self.sets.keys())
         return SetGroepType.OVERIG.value not in self.sets
     
     @property
@@ -348,11 +420,15 @@ class Oefening:
         
         titel = kolom.empty()
         for setgroep, sets in self.sets.items():
-            kolom.write(setgroep)
+            if self.hoofdoefening:
+                kolom.write(setgroep)
             for set in sets:
+                
                 set.paneel(kolom)
-            # TODO: knop toevoegen voor meer sets
-        
+            
+            if setgroep in self.setknoppen:
+                self.setknoppen[setgroep].paneel(kolom)
+            
         titel.write(self.titel)
 
 @dataclass
@@ -386,12 +462,16 @@ class Sessie:
                 schema_uuid = list(schemas_huidig.keys())[0]
                 schema = list(schemas_huidig.values())[0]
         
+        stop_iteratie = False
         for week_tekst, sessie_week in schema.sessies.items():
             for dag_tekst, sessie_dag in sessie_week.items():
                 if sessie_dag["status"] == Status.GEPLAND:
                     week = int(week_tekst.replace("week", "").strip())
                     dag = int(dag_tekst.replace("dag", "").strip())
+                    stop_iteratie = True
                     break
+            if stop_iteratie:
+                break
         
         oefeningen = []
         trainingsschema = schema.oefeningen[f"dag {dag}"]
@@ -429,7 +509,7 @@ class Sessie:
             schema.datum_eind = self.datum
             schema.status = Status.AFGEROND
         
-        bestandspad = Path(f"gegevens\\{self.datum.strftime("%Y-%m-%d")}.json")
+        bestandspad = Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
         
         sessie = {
             "schema_uuid": self.schema_uuid,
@@ -457,12 +537,17 @@ class Sessie:
                 "sets": [],
                 }
             
-            for setgroep, sets in oefening.sets.items():
+            for sets in oefening.sets.values():
                 for set in sets:
-                    oefening_dict["sets"].append({
-                        "repetities": set.repetitie_gedaan,
-                        "gewicht": set.gewicht_gedaan,
-                        })
+                    if set.gewicht_type == GewichtType.GEWICHTLOOS:
+                        oefening_dict["sets"].append({
+                            "repetities": set.repetitie_gedaan,
+                            })
+                    else:
+                        oefening_dict["sets"].append({
+                            "repetities": set.repetitie_gedaan,
+                            "gewicht": set.gewicht_gedaan,
+                            })
             
             resultaten.append(oefening_dict)
         
@@ -490,6 +575,10 @@ class Sessie:
             st.session_state["opslaan_uitgeschakeld"] = True
         else:
             st.session_state["opslaan_uitgeschakeld"] = not all(set.afgerond for oefening in self.oefeningen for setgroep in oefening.sets.values() for set in setgroep)
+        
+        if "volledig_scherm" not in st.session_state:
+            st.session_state["volledig_scherm"] = True
+            keyboard.press_and_release("f11")
         
         if top.button(
             label = "opslaan en afsluiten",
