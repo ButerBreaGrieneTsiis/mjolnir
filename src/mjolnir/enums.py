@@ -32,6 +32,7 @@ class OefeningLichaamsgewicht(OefeningEnum):
     SIT_UPS = ("sit-ups", [])
     PULL_UPS = ("pull-up", [])
     CHIN_UPS = ("chin-up", [])
+    AB_WHEEL = ("ab wheel", [])
 
 class OefeningGewicht(OefeningEnum):
     
