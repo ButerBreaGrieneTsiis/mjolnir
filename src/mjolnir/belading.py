@@ -1,4 +1,3 @@
-from __future__ import annotations
 from dataclasses import dataclass
 from itertools import permutations, product
 from typing import ClassVar, List
@@ -38,7 +37,7 @@ class Halterstang(GeregistreerdObject):
         self,
         gewicht_per_set: List[float],
         halterschijven: List[Halterschijf] = None,
-        ) -> List[Halter]:
+        ) -> List["Halter"]:
         
         halterschijven_per_kant = [halterschijf.massa for halterschijf in halterschijven for _ in range(halterschijf.aantal//2)]
         
@@ -104,18 +103,13 @@ class Halterstang(GeregistreerdObject):
                 else:
                     aantal_overeenkomend = 0
                 
-                if len(belading) < len(gewichten):
-                    for gewicht in gewichten[aantal_overeenkomend:]:
-                        belading.append(gewicht)
-                        kost += 1
                 
-                else:
-                    kost += len(belading) - aantal_overeenkomend
-                    belading = belading[:aantal_overeenkomend]
-                    
-                    for gewicht in gewichten[aantal_overeenkomend:]:
-                        belading.append(gewicht)
-                        kost += 1
+                kost += len(belading) - aantal_overeenkomend
+                belading = belading[:aantal_overeenkomend]
+                
+                for gewicht in gewichten[aantal_overeenkomend:]:
+                    belading.append(gewicht)
+                    kost += 1
             
             kost += len(belading) # volledig ontladen
             
@@ -142,7 +136,7 @@ class Halterstang(GeregistreerdObject):
         self,
         haltermassa: float,
         halterschijven: List[Halterschijf] = None,
-        ) -> Halter:
+        ) -> "Halter":
         
         halterschijven = Halterschijven.openen().lijst if halterschijven is None else halterschijven
         halterschijven.sort(key = lambda x: x.massa, reverse = True)
@@ -176,7 +170,7 @@ class Halter:
         halterstang: Halterstang,
         halterschijven_links: List[Halterschijf] = None,
         halterschijven_rechts: List[Halterschijf] = None,
-        ) -> Halter:
+        ) -> "Halter":
         
         self.halterstang = halterstang
         self.halterschijven_links = halterschijven_links
