@@ -282,17 +282,17 @@ class Oefening:
         
         if oefening_type in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
             
-            halterstangen = Register().halterstangen.filter(halter_type = HALTERS[self.oefening.__class__.__name__])
-            
-            if len(halterstangen) == 1:
-                halterstang = list(halterstangen.values())[0]
-                halterschijven = list(Register().halterschijven.filter(diameter = halterstang.diameter).values())
-            else:
-                raise NotImplementedError("momenteel wordt maximaal één halterstang ondersteund per halter_type")
-            
             gewichten = [set.gewicht for setgroep in self.sets.values() for set in setgroep if set.gewicht is not None]
             
             if len(gewichten) > 0:
+                
+                halterstangen = Register().halterstangen.filter(halter_type = HALTERS[self.oefening.__class__.__name__])
+                
+                if len(halterstangen) == 1:
+                    halterstang = list(halterstangen.values())[0]
+                    halterschijven = list(Register().halterschijven.filter(diameter = halterstang.diameter).values())
+                else:
+                    raise NotImplementedError("momenteel wordt maximaal één halterstang ondersteund per halter_type")
                 
                 halters = halterstang.optimaal_laden(
                     gewicht_per_set = gewichten,
