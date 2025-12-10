@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from dataclasses import dataclass
 import datetime as dt
 import keyboard
@@ -243,17 +243,19 @@ class SetKnop:
     
     oefening: "Oefening"
     setgroep: str
-    set: Set
+    set_sjabloon: Set
     set_nummer: int
     
     def toevoegen_set(self):
         
         self.set_nummer += 1
         
-        set = copy(self.set)
+        set = copy(self.set_sjabloon)
         set.set_nummer = self.set_nummer
         
+        st.session_state["opslaan_uitgeschakeld"] = True
         self.oefening.sets[self.setgroep].append(set)
+        
     
     def paneel(
         self,
@@ -314,7 +316,7 @@ class Oefening:
                 setknop = SetKnop(
                     oefening = self,
                     setgroep = setgroep,
-                    set = sets[0],
+                    set_sjabloon = deepcopy(sets[0]),
                     set_nummer = sets[0].set_nummer,
                     )
                 
