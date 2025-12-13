@@ -149,11 +149,18 @@ class Set:
             max_repetities = self.repetitie_aantal[1]
             aantal_repetities = self.repetitie_aantal[1]
         else:
-            max_repetities = 10
+            max_repetities = 30
             if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
                 aantal_repetities = self.repetitie_aantal[1]
             else:
                 aantal_repetities = self.repetitie_aantal
+        
+        if self.gewicht_type == GewichtType.PERCENTAGE:
+            hoeveelheid_gewicht = self.halter.massa
+        elif self.gewicht == GewichtType.GEWICHT:
+            hoeveelheid_gewicht = self.gewicht
+        else:
+            hoeveelheid_gewicht = 0
         
         oefening = self.oefening.value[0].replace(" ", "_")
         
@@ -169,16 +176,15 @@ class Set:
         if f"repetities_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"repetities_{oefening}_{self.set_nummer}"] = aantal_repetities
         
+        # hoeveelheid gewicht van deze set
+        if f"gewicht_{oefening}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"gewicht_{oefening}_{self.set_nummer}"] = hoeveelheid_gewicht
+        
         if f"knop_{oefening}_{self.set_nummer}" in st.session_state:
             if st.session_state[f"knop_{oefening}_{self.set_nummer}"]:
                 
                 self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
-                
-                if self.oefening.__class__ in [OefeningBarbell, OefeningCurl, OefeningDumbbell]: 
-                    if self.halter is not None:
-                        self.gewicht_gedaan = self.halter.massa
-                elif self.gewicht_type != GewichtType.GEWICHTLOOS:
-                    raise NotImplementedError
+                self.gewicht_gedaan = st.session_state[f"gewicht_{oefening}_{self.set_nummer}"]
                 
                 self.afgerond = True
                 
@@ -214,8 +220,15 @@ class Set:
             min_value = 0,
             max_value = max_repetities,
             key = f"repetities_{oefening}_{self.set_nummer}",
-            label_visibility = "hidden",
             )
+        
+        if self.gewicht_type == GewichtType.VRIJ:
+            expander.slider(
+                label = "gewicht",
+                min_value = 0,
+                max_value = 100,
+                key = f"gewicht_{oefening}_{self.set_nummer}",
+                )
         
         expander.button(
             label = "afronden",
@@ -578,9 +591,9 @@ class Sessie:
         else:
             st.session_state["opslaan_uitgeschakeld"] = not all(set.afgerond for oefening in self.oefeningen for setgroep in oefening.sets.values() for set in setgroep)
         
-        if "volledig_scherm" not in st.session_state:
-            st.session_state["volledig_scherm"] = True
-            keyboard.press_and_release("f11")
+        # if "volledig_scherm" not in st.session_state:
+        #     st.session_state["volledig_scherm"] = True
+        #     keyboard.press_and_release("f11")
         
         if top.button(
             label = "opslaan en afsluiten",
