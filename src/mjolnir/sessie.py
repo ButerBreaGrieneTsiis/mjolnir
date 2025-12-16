@@ -215,7 +215,12 @@ class Set:
             kolom_halter.markdown("**halter**")
             kolom_halter.markdown(self.halter)
         
-        expander.slider(
+        formulier = expander.form(
+            key = f"formulier_{oefening}_{self.set_nummer}",
+            border = False,
+            )
+        
+        formulier.slider(
             label = "repetities",
             min_value = 0,
             max_value = max_repetities,
@@ -223,14 +228,14 @@ class Set:
             )
         
         if self.gewicht_type == GewichtType.VRIJ:
-            expander.slider(
+            formulier.slider(
                 label = "gewicht",
                 min_value = 0,
                 max_value = 100,
                 key = f"gewicht_{oefening}_{self.set_nummer}",
                 )
         
-        expander.button(
+        formulier.form_submit_button(
             label = "afronden",
             key = f"knop_{oefening}_{self.set_nummer}",
             )
@@ -268,7 +273,6 @@ class SetKnop:
         
         st.session_state["opslaan_uitgeschakeld"] = True
         self.oefening.sets[self.setgroep].append(set)
-        
     
     def paneel(
         self,
