@@ -27,34 +27,36 @@ class OefeningEnum(Enum):
 
 class OefeningLichaamsgewicht(OefeningEnum):
     
-    PUSH_UPS = ("push-up", [])
-    BENCH_DIPS = ("bench dips", [])
-    SIT_UPS = ("sit-ups", [])
-    PULL_UPS = ("pull-up", [])
-    CHIN_UPS = ("chin-up", [])
-    AB_WHEEL = ("ab wheel", [])
+    PUSH_UPS = ("push-up", [Spiergroep.BORST, Spiergroep.SCHOUDERS, Spiergroep.TRICEPS])
+    BENCH_DIPS = ("bench dips", [Spiergroep.TRICEPS])
+    SIT_UPS = ("sit-ups", [Spiergroep.BUIKSPIEREN])
+    PULL_UPS = ("pull-up", [Spiergroep.BOVENRUG, Spiergroep.ONDERARMEN])
+    CHIN_UPS = ("chin-up", [Spiergroep.BICEPS, Spiergroep.BOVENRUG, Spiergroep.ONDERARMEN])
+    AB_WHEEL = ("ab wheel", [Spiergroep.BUIKSPIEREN])
+    PLANKS = ("planks", [Spiergroep.BUIKSPIEREN])
 
 class OefeningGewicht(OefeningEnum):
     
-    SIT_UPS_GEWICHT = ("sit-ups met gewicht", [])
+    SIT_UPS_GEWICHT = ("sit-ups met gewicht", [Spiergroep.BUIKSPIEREN])
+    LATERAL_RAISE = ("lateral raise", [Spiergroep.SCHOUDERS])
 
 class OefeningBarbell(OefeningEnum):
     
     PRESS = ("overhead press", [Spiergroep.SCHOUDERS])
     SQUAT = ("squat", [Spiergroep.ONDERRUG, Spiergroep.BILLEN, Spiergroep.QUADRICEPS, Spiergroep.HAMSTRINGS])
-    BENCH = ("bench press", [])
-    DEADLIFT = ("deadlift", [])
-    BENT_OVER_ROW = ("bent-over row", [])
-    SHRUG = ("shrug", [])
-    CALF_RAISE = ("calf raise", [])
+    BENCH = ("bench press", [Spiergroep.BORST, Spiergroep.TRICEPS])
+    DEADLIFT = ("deadlift", [Spiergroep.ONDERRUG, Spiergroep.BILLEN, Spiergroep.QUADRICEPS, Spiergroep.HAMSTRINGS])
+    BENT_OVER_ROW = ("bent-over row", [Spiergroep.BOVENRUG])
+    SHRUG = ("shrug", [Spiergroep.BOVENRUG])
+    CALF_RAISE = ("calf raise", [Spiergroep.KUITEN])
 
 class OefeningCurl(OefeningEnum):
     
-    CURLS = ("curls", [])
+    CURLS = ("curls", [Spiergroep.BICEPS])
 
 class OefeningDumbbell(OefeningEnum):
     
-    LATERAL_RAISE = ("lateral raise", [])
+    ...
 
 class GewichtType(Enum):
     
