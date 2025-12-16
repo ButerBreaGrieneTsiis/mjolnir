@@ -5,7 +5,7 @@ import keyboard
 import os
 from pathlib import Path
 import psutil
-from typing import Any, Dict, List, Tuple
+from typing import Any, ClassVar, Dict, List, Tuple
 
 from grienetsiis import opslaan_json
 import streamlit as st
@@ -35,6 +35,8 @@ class Set:
     afgerond: bool = False
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
+    
+    REPETITIES_MAX: ClassVar[int] = 30
     
     @classmethod
     def van_setcode(
@@ -149,7 +151,7 @@ class Set:
             max_repetities = self.repetitie_aantal[1]
             aantal_repetities = self.repetitie_aantal[1]
         else:
-            max_repetities = 30
+            max_repetities = self.REPETITIES_MAX
             if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
                 aantal_repetities = self.repetitie_aantal[1]
             else:
