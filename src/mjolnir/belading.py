@@ -36,7 +36,7 @@ class Halterstang(GeregistreerdObject):
     def optimaal_laden(
         self,
         gewicht_per_set: List[float],
-        halterschijven: List[Halterschijf] = None,
+        halterschijven: List[Halterschijf],
         ) -> List["Halter"]:
         
         halterschijven_per_kant = [halterschijf.massa for halterschijf in halterschijven for _ in range(halterschijf.aantal//2)]
@@ -134,47 +134,37 @@ class Halterstang(GeregistreerdObject):
     
     def laden(
         self,
-        haltermassa: float,
-        halterschijven: List[Halterschijf] = None,
+        gewicht: float,
+        halterschijven: List[Halterschijf],
         ) -> "Halter":
         
-        halterschijven = Halterschijven.openen().lijst if halterschijven is None else halterschijven
+        halterschijf_min = min(halterschijf.massa for halterschijf in halterschijven)
+        
         halterschijven.sort(key = lambda x: x.massa, reverse = True)
+        halterschijven_per_kant = [halterschijf for halterschijf in halterschijven for _ in range(halterschijf.aantal//2)]
         
-        massa_per_kant_nodig = (haltermassa - self.massa)/2
-        ruimte_over = self.opname_breedte
+        gewicht_per_kant = round((gewicht - self.massa)/2/halterschijf_min)*halterschijf_min
         
-        halterschijven_links = []
-        halterschijven_rechts = []
+        halterschijven_kant = []
         
-        for halterschijf in halterschijven:
-            for _ in range(halterschijf.aantal//2):
-                if halterschijf.massa <= round(massa_per_kant_nodig * 0.8)/0.8 and ruimte_over > halterschijf.breedte:
-                    halterschijven_links.append(halterschijf)
-                    halterschijven_rechts.append(halterschijf)
-                    massa_per_kant_nodig -= halterschijf.massa
-                    ruimte_over -= halterschijf.breedte
-                else:
-                    continue
+        for halterschijf in halterschijven_per_kant:
+            if halterschijf.massa + sum(halterschijf.massa for halterschijf in halterschijven_kant) <= gewicht_per_kant:
+                halterschijven_kant.append(halterschijf)
+            else:
+                continue
         
         return Halter(
             self,
-            halterschijven_links,
-            halterschijven_rechts,
+            halterschijven_kant,
+            halterschijven_kant,
             )
 
+@dataclass
 class Halter: 
     
-    def __init__(
-        self,
-        halterstang: Halterstang,
-        halterschijven_links: List[Halterschijf] = None,
-        halterschijven_rechts: List[Halterschijf] = None,
-        ) -> "Halter":
-        
-        self.halterstang = halterstang
-        self.halterschijven_links = halterschijven_links
-        self.halterschijven_rechts = halterschijven_rechts
+    halterstang: Halterstang
+    halterschijven_links: List[Halterschijf] = None
+    halterschijven_rechts: List[Halterschijf] = None
     
     def __repr__(self):
         links = "".join([f"[{halterschijf.massa}]" for halterschijf in reversed(self.halterschijven_links)])
