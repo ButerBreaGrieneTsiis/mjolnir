@@ -125,7 +125,7 @@ class Set:
         
         if "?" in _gewicht_aantal:
             gewicht_type = GewichtType.VRIJ
-            gewicht = None
+            gewicht = 0.0
         elif "%" in _gewicht_aantal:
             gewicht_type = GewichtType.PERCENTAGE
             trainingsgewicht = next(trainingsgewicht_dict["trainingsgewicht"] for trainingsgewicht_dict in trainingsgewichten if trainingsgewicht_dict["oefening"] == oefening)
@@ -159,10 +159,10 @@ class Set:
         
         if self.gewicht_type == GewichtType.PERCENTAGE:
             hoeveelheid_gewicht = self.halter.massa
-        elif self.gewicht == GewichtType.GEWICHT:
+        elif self.gewicht == GewichtType.GEWICHT or self.gewicht == GewichtType.VRIJ:
             hoeveelheid_gewicht = self.gewicht
         else:
-            hoeveelheid_gewicht = 0
+            hoeveelheid_gewicht = 0.0
         
         oefening = self.oefening.value[0].replace(" ", "_")
         
@@ -182,16 +182,24 @@ class Set:
         if f"gewicht_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"gewicht_{oefening}_{self.set_nummer}"] = hoeveelheid_gewicht
         
-        if f"knop_{oefening}_{self.set_nummer}" in st.session_state:
-            if st.session_state[f"knop_{oefening}_{self.set_nummer}"]:
-                
-                self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
-                self.gewicht_gedaan = st.session_state[f"gewicht_{oefening}_{self.set_nummer}"]
-                
-                self.afgerond = True
-                
-                st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
-                st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
+        if st.session_state.get(f"knop_gewicht_{oefening}_{self.set_nummer}", False):
+            
+            self.halter = self.halter.halterstang.laden(
+                gewicht = st.session_state[f"gewicht_ingevuld_{oefening}_{self.set_nummer}"],
+                halterschijven = st.session_state["register"].halterschijven.filter(diameter = self.halter.halterstang.diameter).lijst,
+                )
+            
+            st.session_state[f"gewicht_{oefening}_{self.set_nummer}"] = self.halter.massa
+        
+        if st.session_state.get(f"knop_{oefening}_{self.set_nummer}", False):
+            
+            self.repetitie_gedaan = st.session_state[f"repetities_{oefening}_{self.set_nummer}"]
+            self.gewicht_gedaan = st.session_state[f"gewicht_{oefening}_{self.set_nummer}"]
+            
+            self.afgerond = True
+            
+            st.session_state[f"expander_{oefening}_{self.set_nummer}"] = False
+            st.session_state[f"expander_{oefening}_{self.set_nummer + 1}"] = True
         
         if f"label_{oefening}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"label_{oefening}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.setcode}"
@@ -209,13 +217,32 @@ class Set:
         kolom_repetities.markdown("**repetities**")
         kolom_repetities.markdown(f"{self.repetitie_tekst} ({self.repetitie_type.value})")
         
-        if self.gewicht_type == GewichtType.GEWICHT or self.gewicht_type == GewichtType.PERCENTAGE:
+        if self.gewicht_type != GewichtType.GEWICHTLOOS:
             kolom_gewicht.markdown("**gewicht**")
             kolom_gewicht.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
         
         if self.oefening.__class__ in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
             kolom_halter.markdown("**halter**")
             kolom_halter.markdown(self.halter)
+        
+        if self.gewicht_type == GewichtType.VRIJ:
+            
+            formulier_gewicht = expander.form(
+                key = f"formulier_gewicht_{oefening}_{self.set_nummer}",
+                border = False,
+                )
+            
+            formulier_gewicht.slider(
+                label = "gewicht",
+                min_value = 0,
+                max_value = 100,
+                key = f"gewicht_ingevuld_{oefening}_{self.set_nummer}",
+                )
+            
+            formulier_gewicht.form_submit_button(
+                label = "gewicht instellen",
+                key = f"knop_gewicht_{oefening}_{self.set_nummer}",
+                )
         
         formulier = expander.form(
             key = f"formulier_{oefening}_{self.set_nummer}",
@@ -228,14 +255,6 @@ class Set:
             max_value = max_repetities,
             key = f"repetities_{oefening}_{self.set_nummer}",
             )
-        
-        if self.gewicht_type == GewichtType.VRIJ:
-            formulier.slider(
-                label = "gewicht",
-                min_value = 0,
-                max_value = 100,
-                key = f"gewicht_{oefening}_{self.set_nummer}",
-                )
         
         formulier.form_submit_button(
             label = "afronden",
@@ -299,32 +318,29 @@ class Oefening:
     
     def __post_init__(self):
         
-        oefening_type = self.oefening.__class__
-        
-        if oefening_type in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
+        if self.oefening.__class__ in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
             
-            gewichten = [set.gewicht for setgroep in self.sets.values() for set in setgroep if set.gewicht is not None]
+            halterstangen = Register().halterstangen.filter(halter_type = HALTERS[self.oefening.__class__.__name__]).lijst
             
-            if len(gewichten) > 0:
-                
-                halterstangen = Register().halterstangen.filter(halter_type = HALTERS[self.oefening.__class__.__name__])
-                
-                if len(halterstangen) == 1:
-                    halterstang = list(halterstangen.values())[0]
-                    halterschijven = list(Register().halterschijven.filter(diameter = halterstang.diameter).values())
-                else:
-                    raise NotImplementedError("momenteel wordt maximaal één halterstang ondersteund per halter_type")
-                
-                halters = halterstang.optimaal_laden(
-                    gewicht_per_set = gewichten,
-                    halterschijven = halterschijven,
-                    )
-                
-                for set, halter in zip([set for setgroep in self.sets.values() for set in setgroep], halters):
-                    set.halter = halter
-        
-        else:
-            halter = None
+            if len(halterstangen) > 1:
+                raise NotImplementedError("momenteel wordt maximaal één halterstang ondersteund per halter_type")
+            
+            halterstang = halterstangen[0]
+            halterschijven = Register().halterschijven.filter(diameter = halterstang.diameter).lijst
+            
+            gewichten = []
+            
+            for setgroep in self.sets.values():
+                for set in setgroep:
+                    gewichten.append(set.gewicht)
+            
+            halters = halterstang.optimaal_laden(
+                gewicht_per_set = gewichten,
+                halterschijven = halterschijven,
+                )
+            
+            for set, halter in zip([set for setgroep in self.sets.values() for set in setgroep], halters):
+                set.halter = halter
         
         setknoppen = {}
         
