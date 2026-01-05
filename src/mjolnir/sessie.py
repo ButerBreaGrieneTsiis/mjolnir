@@ -510,6 +510,24 @@ class Sessie:
             if stop_iteratie:
                 break
         
+        return cls.nieuw(
+            schema_uuid = schema_uuid,
+            week = week,
+            dag = dag,
+            datum = dt.date.today(),
+            )
+    
+    @classmethod
+    def nieuw(
+        cls,
+        schema_uuid : str,
+        week: int,
+        dag: int,
+        datum: dt.date,
+        ) -> "Sessie":
+        
+        schema = Register().schema[schema_uuid]
+        
         oefeningen = []
         trainingsschema = schema.oefeningen[f"dag {dag}"]
         
@@ -528,7 +546,7 @@ class Sessie:
             schema_uuid = schema_uuid,
             week = week,
             dag = dag,
-            datum = dt.date.today(),
+            datum = datum,
             oefeningen = oefeningen,
             )
     
