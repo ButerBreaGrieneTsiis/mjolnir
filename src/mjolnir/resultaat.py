@@ -54,6 +54,33 @@ class Resultaat:
             resultaten = resultaten,
             )
     
+    @classmethod
+    def van_json(
+        cls,
+        **dict,
+        ) -> "Resultaat":
+        
+        if "datum" in dict:
+            dict["datum"] = dt.datetime.strptime(dict["datum"], "%Y-%m-%d").date()
+        
+        return cls(**dict)
+    
+    @classmethod
+    def openen(
+        cls,
+        datum: dt.date,
+        ) -> "Resultaat":
+        
+        bestandspad = Path(f"gegevens\\sessies\\{datum.strftime("%Y-%m-%d")}.json")
+        
+        if bestandspad.is_file():
+            
+            return openen_json(
+                bestandspad = bestandspad,
+                decoder_functie = cls.van_json,
+                enum_dict = ENUMS,
+                )
+    
     def opslaan(self):
         
         bestandspad = Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
