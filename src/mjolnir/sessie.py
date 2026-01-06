@@ -3,16 +3,15 @@ from dataclasses import dataclass
 import datetime as dt
 import keyboard
 import os
-from pathlib import Path
 import psutil
 from typing import Any, ClassVar, Dict, List, Tuple
 
-from grienetsiis import opslaan_json
 import streamlit as st
 
 from mjolnir.belading import Halter
-from mjolnir.enums import OefeningEnum, OefeningLichaamsgewicht, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, SetGroepType, Status, ENUMS, HALTERS
+from mjolnir.enums import OefeningEnum, OefeningLichaamsgewicht, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, SetGroepType, Status, HALTERS
 from mjolnir.register import Register
+from mjolnir.resultaat import Resultaat
 
 
 @dataclass
@@ -564,49 +563,11 @@ class Sessie:
             schema.datum_eind = self.datum
             schema.status = Status.AFGEROND
         
-        bestandspad = Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
-        
-        sessie = {
-            "schema_uuid": self.schema_uuid,
-            "week": self.week,
-            "dag": self.dag,
-            "datum": self.datum.strftime("%Y-%m-%d"),
-            "resultaten": self.resultaten,
-            }
-        
-        opslaan_json(
-            sessie,
-            bestandspad,
-            enum_dict = ENUMS,
-            )
+        self.resultaat.opslaan()
     
     @property
-    def resultaten(self):
-        
-        resultaten = []
-        
-        for oefening in self.oefeningen:
-            
-            oefening_dict = {
-                "oefening": oefening.oefening,
-                "sets": [],
-                }
-            
-            for sets in oefening.sets.values():
-                for set in sets:
-                    if set.gewicht_type == GewichtType.GEWICHTLOOS:
-                        oefening_dict["sets"].append({
-                            "repetities": set.repetitie_gedaan,
-                            })
-                    else:
-                        oefening_dict["sets"].append({
-                            "repetities": set.repetitie_gedaan,
-                            "gewicht": set.gewicht_gedaan,
-                            })
-            
-            resultaten.append(oefening_dict)
-        
-        return resultaten
+    def resultaat(self) -> Resultaat:
+        return Resultaat.van_sessie(self)
     
     def paneel(self):
         
