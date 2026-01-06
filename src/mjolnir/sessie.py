@@ -274,7 +274,10 @@ class Set:
         if self.gewicht_type == GewichtType.GEWICHTLOOS:
             return None
         else:
-            return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
+            return Resultaat.epley(
+                gewicht = self.gewicht_gedaan,
+                repetities = self.repetities_gedaan,
+                )
 
 @dataclass
 class SetKnop:
