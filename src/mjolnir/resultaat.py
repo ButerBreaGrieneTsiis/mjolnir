@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 import datetime as dt
 from pathlib import Path
+import re
 from typing import Any, Dict, List
 
 from grienetsiis import opslaan_json, openen_json
 
-from mjolnir.enums import GewichtType, ENUMS
+from mjolnir.enums import OefeningEnum, GewichtType, ENUMS
 
 
 @dataclass
@@ -15,7 +16,7 @@ class Resultaat:
     week: int
     dag: int
     datum: dt.date
-    resultaten: List[Dict[str, Any]]
+    oefeningen: List[Dict[str, Any]]
     
     @classmethod
     def van_sessie(
@@ -23,7 +24,7 @@ class Resultaat:
         sessie
         ) -> "Resultaat":
         
-        resultaten = []
+        oefeningen = []
         
         for oefening in sessie.oefeningen:
             
@@ -44,14 +45,14 @@ class Resultaat:
                             "gewicht": set.gewicht_gedaan,
                             })
             
-            resultaten.append(oefening_dict)
+            oefeningen.append(oefening_dict)
         
         return cls(
             schema_uuid = sessie.schema_uuid,
             week = sessie.week,
             dag = sessie.dag,
             datum = sessie.datum,
-            resultaten = resultaten,
+            oefeningen = oefeningen,
             )
     
     @classmethod
@@ -68,13 +69,8 @@ class Resultaat:
     @classmethod
     def openen(
         cls,
-        datum: dt.date,
+        bestandspad: Path,
         ) -> "Resultaat":
-        
-        bestandspad = Path(f"gegevens\\sessies\\{datum.strftime("%Y-%m-%d")}.json")
-        
-        if bestandspad.is_file():
-            
             return openen_json(
                 bestandspad = bestandspad,
                 decoder_functie = cls.van_json,
@@ -83,18 +79,75 @@ class Resultaat:
     
     def opslaan(self):
         
-        bestandspad = Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
-        
-        sessie = {
+        opslaan_json(
+            self.naar_json(),
+            self.bestandspad,
+            enum_dict = ENUMS,
+            )
+    
+    def naar_json(self):
+        return {
             "schema_uuid": self.schema_uuid,
             "week": self.week,
             "dag": self.dag,
             "datum": self.datum.strftime("%Y-%m-%d"),
-            "resultaten": self.resultaten,
+            "oefeningen": self.oefeningen,
             }
+    
+    @staticmethod
+    def oefening(
+        oefening: OefeningEnum,
+        aantal: int = 10,
+        ) -> List[Dict[str, Any]]:
         
-        opslaan_json(
-            sessie,
-            bestandspad,
-            enum_dict = ENUMS,
-            )
+        resultaten = []
+        
+        gegevenspad = Path(f"gegevens\\sessies")
+        bestandspaden = [bestand for bestand in gegevenspad.iterdir() if re.search(r"^gegevens\\sessies\\\d{4}-\d{2}-\d{2}.json$", str(bestand))]
+        
+        for bestandspad in reversed(bestandspaden):
+            resultaat = Resultaat.openen(bestandspad)
+            
+            for _oefening in resultaat.oefeningen:
+                if _oefening["oefening"] == oefening:
+                    resultaten.append({
+                        "datum": resultaat.datum,
+                        "sets": _oefening["sets"],
+                        })
+                    
+                    break
+            
+            if len(resultaten) == aantal:
+                break
+        
+        return resultaten
+    
+    @staticmethod
+    def e1rm(
+        oefening: OefeningEnum,
+        aantal: int = 10,
+        ) -> List[Dict[str, Any]]:
+        
+        resultaten = Resultaat.oefening(oefening, aantal)
+        e1rms = []
+        
+        for resultaat in resultaten:
+            
+            e1rm = max(Resultaat.epley(set["gewicht"], set["repetities"]) for set in resultaat["sets"])
+            e1rms.append({
+                "datum": resultaat["datum"],
+                "e1rm": e1rm,
+                })
+        
+        return e1rms
+    
+    @staticmethod
+    def epley(
+        gewicht: float,
+        repetities: int,
+        ) -> float:
+        return gewicht * (1 + repetities/30)
+    
+    @property
+    def bestandspad(self) -> Path:
+        return Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
