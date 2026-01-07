@@ -183,12 +183,15 @@ class SessieSet:
         
         if st.session_state.get(f"knop_gewicht_{oefening}_{self.set_nummer}", False):
             
-            self.halter = self.halter.halterstang.laden(
-                gewicht = st.session_state[f"gewicht_ingevuld_{oefening}_{self.set_nummer}"],
-                halterschijven = st.session_state["register"].halterschijven.filter(diameter = self.halter.halterstang.diameter).lijst,
-                )
-            
-            st.session_state[f"gewicht_{oefening}_{self.set_nummer}"] = self.halter.massa
+            if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
+                self.halter = self.halter.halterstang.laden(
+                    gewicht = st.session_state[f"gewicht_ingevuld_{oefening}_{self.set_nummer}"],
+                    halterschijven = st.session_state["register"].halterschijven.filter(diameter = self.halter.halterstang.diameter).lijst,
+                    )
+                st.session_state[f"gewicht_{oefening}_{self.set_nummer}"] = self.halter.massa
+            else:
+                self.gewicht = st.session_state[f"gewicht_ingevuld_{oefening}_{self.set_nummer}"]
+                st.session_state[f"gewicht_{oefening}_{self.set_nummer}"] = self.gewicht
         
         if st.session_state.get(f"knop_{oefening}_{self.set_nummer}", False):
             
@@ -218,9 +221,12 @@ class SessieSet:
         
         if self.gewicht_type != GewichtType.GEWICHTLOOS:
             kolom_gewicht.markdown("**gewicht**")
-            kolom_gewicht.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
+            if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
+                kolom_gewicht.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
+            else:
+                kolom_gewicht.markdown(f"{f"{self.gewicht}".replace(".", ",")} kg")
         
-        if self.oefening.__class__ in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
+        if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
             kolom_halter.markdown("**halter**")
             kolom_halter.markdown(self.halter)
         
@@ -315,7 +321,7 @@ class SessieOefening:
     
     def __post_init__(self):
         
-        if self.oefening.__class__ in [OefeningBarbell, OefeningCurl, OefeningDumbbell]:
+        if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
             
             halterstangen = Register().halterstangen.filter(halter_type = HALTERS[self.oefening.__class__.__name__]).lijst
             
@@ -328,28 +334,28 @@ class SessieOefening:
             gewichten = []
             
             for setgroep in self.sets.values():
-                for set in setgroep:
-                    gewichten.append(set.gewicht)
+                for sessie_set in setgroep:
+                    gewichten.append(sessie_set.gewicht)
             
             halters = halterstang.optimaal_laden(
                 gewicht_per_set = gewichten,
                 halterschijven = halterschijven,
                 )
             
-            for set, halter in zip([set for setgroep in self.sets.values() for set in setgroep], halters):
-                set.halter = halter
+            for sessie_set, halter in zip([sessie_set for setgroep in self.sets.values() for sessie_set in setgroep], halters):
+                sessie_set.halter = halter
         
         setknoppen = {}
         
-        for setgroep, sets in self.sets.items():
+        for setgroep, sessie_sets in self.sets.items():
             
-            if len(sets) == 1 and sets[0].set_type in [SetType.AMSAP, SetType.VRIJ]:
+            if len(sessie_sets) == 1 and sessie_sets[0].set_type in (SetType.AMSAP, SetType.VRIJ):
                 
                 setknop = SetKnop(
                     oefening = self,
                     setgroep = setgroep,
-                    set_sjabloon = deepcopy(sets[0]),
-                    set_nummer = sets[0].set_nummer,
+                    set_sjabloon = deepcopy(sessie_sets[0]),
+                    set_nummer = sessie_sets[0].set_nummer,
                     )
                 
                 setknoppen[setgroep] = setknop
