@@ -276,7 +276,7 @@ class Set:
         else:
             return Resultaat.epley(
                 gewicht = self.gewicht_gedaan,
-                repetities = self.repetities_gedaan,
+                repetities = self.repetitie_gedaan,
                 )
 
 @dataclass
