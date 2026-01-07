@@ -98,7 +98,54 @@ class ResultaatOefening:
     def e1rm(self) -> float | None:
         e1rm = max(set.volume for set in self.sets if set.volume is not None)
         return e1rm if e1rm > 0.0 else None
-
+    
+    @staticmethod
+    def recent(
+        oefening: OefeningEnum,
+        aantal: int = 10,
+        ) -> List[Dict[str, Any]]:
+        
+        resultaten = []
+        
+        gegevenspad = Path(f"gegevens\\sessies")
+        bestandspaden = [bestand for bestand in gegevenspad.iterdir() if re.search(r"^gegevens\\sessies\\\d{4}-\d{2}-\d{2}.json$", str(bestand))]
+        
+        for bestandspad in reversed(bestandspaden):
+            resultaat = Resultaat.openen(bestandspad)
+            
+            for resultaat_oefening in resultaat.oefeningen:
+                if resultaat_oefening.oefening == oefening:
+                    resultaten.append({
+                        "datum": resultaat.datum,
+                        "resultaat": resultaat_oefening,
+                        })
+                    
+                    break
+            
+            if len(resultaten) == aantal:
+                break
+        
+        return resultaten
+    
+    @staticmethod
+    def recent_e1rm(
+        oefening: OefeningEnum,
+        aantal: int = 10,
+        ) -> List[Dict[str, Any]]:
+        
+        resultaten = ResultaatOefening.recent(oefening, aantal)
+        e1rms = []
+        
+        for resultaat in resultaten:
+            
+            e1rm = max(resultaat_set.e1rm for resultaat_set in resultaat["resultaat"].sets)
+            e1rms.append({
+                "datum": resultaat["datum"],
+                "e1rm": e1rm,
+                })
+        
+        return e1rms
+    
 @dataclass
 class Resultaat:
     
@@ -172,60 +219,6 @@ class Resultaat:
             "datum": self.datum.strftime("%Y-%m-%d"),
             "oefeningen": self.oefeningen,
             }
-    
-    @staticmethod
-    def     oefening(
-        oefening: OefeningEnum,
-        aantal: int = 10,
-        ) -> List[Dict[str, Any]]:
-        
-        resultaten = []
-        
-        gegevenspad = Path(f"gegevens\\sessies")
-        bestandspaden = [bestand for bestand in gegevenspad.iterdir() if re.search(r"^gegevens\\sessies\\\d{4}-\d{2}-\d{2}.json$", str(bestand))]
-        
-        for bestandspad in reversed(bestandspaden):
-            resultaat = Resultaat.openen(bestandspad)
-            
-            for resultaat_oefening in resultaat.oefeningen:
-                if resultaat_oefening.oefening == oefening:
-                    resultaten.append({
-                        "datum": resultaat.datum,
-                        "sets": resultaat_oefening.sets,
-                        })
-                    
-                    break
-            
-            if len(resultaten) == aantal:
-                break
-        
-        return resultaten
-    
-    @staticmethod
-    def e1rm(
-        oefening: OefeningEnum,
-        aantal: int = 10,
-        ) -> List[Dict[str, Any]]:
-        
-        resultaten = Resultaat.oefening(oefening, aantal)
-        e1rms = []
-        
-        for resultaat in resultaten:
-            
-            e1rm = max(Resultaat.epley(resultaat_set.gewicht, resultaat_set.repetities) for resultaat_set in resultaat["sets"])
-            e1rms.append({
-                "datum": resultaat["datum"],
-                "e1rm": e1rm,
-                })
-        
-        return e1rms
-    
-    @staticmethod
-    def epley(
-        gewicht: float,
-        repetities: int,
-        ) -> float:
-        return gewicht * (1 + repetities/30)
     
     @property
     def bestandspad(self) -> Path:
