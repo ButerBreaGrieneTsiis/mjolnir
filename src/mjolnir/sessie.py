@@ -333,8 +333,8 @@ class SessieOefening:
             
             gewichten = []
             
-            for setgroep in self.sets.values():
-                for sessie_set in setgroep:
+            for sessie_setgroep in self.sets.values():
+                for sessie_set in sessie_setgroep:
                     gewichten.append(sessie_set.gewicht)
             
             halters = halterstang.optimaal_laden(
@@ -342,23 +342,23 @@ class SessieOefening:
                 halterschijven = halterschijven,
                 )
             
-            for sessie_set, halter in zip([sessie_set for setgroep in self.sets.values() for sessie_set in setgroep], halters):
+            for sessie_set, halter in zip([sessie_set for sessie_setgroep in self.sets.values() for sessie_set in sessie_setgroep], halters):
                 sessie_set.halter = halter
         
         setknoppen = {}
         
-        for setgroep, sessie_sets in self.sets.items():
+        for sessie_setgroep, sessie_sets in self.sets.items():
             
             if len(sessie_sets) == 1 and sessie_sets[0].set_type in (SetType.AMSAP, SetType.VRIJ):
                 
                 setknop = SetKnop(
                     oefening = self,
-                    setgroep = setgroep,
+                    setgroep = sessie_setgroep,
                     set_sjabloon = deepcopy(sessie_sets[0]),
                     set_nummer = sessie_sets[0].set_nummer,
                     )
                 
-                setknoppen[setgroep] = setknop
+                setknoppen[sessie_setgroep] = setknop
         
         self.setknoppen = setknoppen
     
@@ -432,13 +432,13 @@ class SessieOefening:
     def volume(self) -> float | None:
         if self.oefening.__class__ == OefeningLichaamsgewicht:
             return None
-        return sum(set.volume for setgroep in self.sets.values() for set in setgroep)
+        return sum(sessie_set.volume for sessie_setgroep in self.sets.values() for sessie_set in sessie_setgroep)
     
     @property
     def e1rm(self) -> float | None:
         if self.oefening.__class__ == OefeningLichaamsgewicht:
             return None
-        return max(set.e1rm for setgroep in self.sets.values() for set in setgroep)
+        return max(sessie_set.e1rm for sessie_setgroep in self.sets.values() for sessie_set in sessie_setgroep)
     
     @property
     def titel(self) -> str:
@@ -456,15 +456,15 @@ class SessieOefening:
         ):
         
         titel = kolom.empty()
-        for setgroep, sets in self.sets.items():
+        for sessie_setgroep, sessie_sets in self.sets.items():
             if self.hoofdoefening:
-                kolom.write(setgroep)
-            for set in sets:
+                kolom.write(sessie_setgroep)
+            for sessie_set in sessie_sets:
                 
-                set.paneel(kolom)
+                sessie_set.paneel(kolom)
             
-            if setgroep in self.setknoppen:
-                self.setknoppen[setgroep].paneel(kolom)
+            if sessie_setgroep in self.setknoppen:
+                self.setknoppen[sessie_setgroep].paneel(kolom)
             
         titel.write(self.titel)
 
@@ -591,7 +591,7 @@ class Sessie:
         if "opslaan_uitgeschakeld" not in st.session_state:
             st.session_state["opslaan_uitgeschakeld"] = True
         else:
-            st.session_state["opslaan_uitgeschakeld"] = not all(set.afgerond for oefening in self.oefeningen for setgroep in oefening.sets.values() for set in setgroep)
+            st.session_state["opslaan_uitgeschakeld"] = not all(sessie_set.afgerond for oefening in self.oefeningen for sessie_setgroep in oefening.sets.values() for sessie_set in sessie_setgroep)
         
         # if "volledig_scherm" not in st.session_state:
         #     st.session_state["volledig_scherm"] = True
