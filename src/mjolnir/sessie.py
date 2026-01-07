@@ -15,7 +15,7 @@ from mjolnir.resultaat import Resultaat
 
 
 @dataclass
-class Set:
+class SessieSet:
     
     setcode: str
     
@@ -44,7 +44,7 @@ class Set:
         set_nummer: int,
         oefening: OefeningEnum,
         trainingsgewichten,
-        ):
+        ) -> "SessieSet":
         
         set_type, set_aantal = cls.sets_uit_setcode(setcode)
         repetitie_type, repetitie_aantal = cls.repetities_uit_setcode(setcode)
@@ -266,25 +266,20 @@ class Set:
     def volume(self) -> float | None:
         if self.gewicht_type == GewichtType.GEWICHTLOOS:
             return None
-        else:
-            return self.gewicht_gedaan * self.repetitie_gedaan
+        return self.gewicht_gedaan * self.repetitie_gedaan
     
     @property
     def e1rm(self) -> float | None:
         if self.gewicht_type == GewichtType.GEWICHTLOOS:
             return None
-        else:
-            return Resultaat.epley(
-                gewicht = self.gewicht_gedaan,
-                repetities = self.repetitie_gedaan,
-                )
+        return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
 
 @dataclass
 class SetKnop:
     
-    oefening: "Oefening"
+    oefening: "SessieOefening"
     setgroep: str
-    set_sjabloon: Set
+    set_sjabloon: SessieSet
     set_nummer: int
     
     def toevoegen_set(self):
@@ -311,10 +306,10 @@ class SetKnop:
             )
 
 @dataclass
-class Oefening:
+class SessieOefening:
     
     oefening: OefeningEnum
-    sets: Dict[str, List[Set]]
+    sets: Dict[str, List[SessieSet]]
     setknoppen: Dict[str, SetKnop] = None
     trainingsgewicht: float = None
     
@@ -385,7 +380,7 @@ class Oefening:
             
             for setcode in setcodes:
                 
-                set_type, set_aantal = Set.sets_uit_setcode(setcode)
+                set_type, set_aantal = SessieSet.sets_uit_setcode(setcode)
                 
                 if sjabloon.setgroep_type.value not in sets:
                     sets[sjabloon.setgroep_type.value] = []
@@ -395,7 +390,7 @@ class Oefening:
                     
                         set_nummer += 1
                         
-                        set = Set.van_setcode(
+                        set = SessieSet.van_setcode(
                             setcode = setcode,
                             set_nummer = set_nummer,
                             oefening = oefening,
@@ -406,7 +401,7 @@ class Oefening:
                 else:
                     set_nummer += 1
                     
-                    set = Set.van_setcode(
+                    set = SessieSet.van_setcode(
                         setcode = setcode,
                         set_nummer = set_nummer,
                         oefening = oefening,
@@ -431,15 +426,13 @@ class Oefening:
     def volume(self) -> float | None:
         if self.oefening.__class__ == OefeningLichaamsgewicht:
             return None
-        else:
-            return sum(set.volume for setgroep in self.sets.values() for set in setgroep)
+        return sum(set.volume for setgroep in self.sets.values() for set in setgroep)
     
     @property
     def e1rm(self) -> float | None:
         if self.oefening.__class__ == OefeningLichaamsgewicht:
             return None
-        else:
-            return max(set.e1rm for setgroep in self.sets.values() for set in setgroep)
+        return max(set.e1rm for setgroep in self.sets.values() for set in setgroep)
     
     @property
     def titel(self) -> str:
@@ -449,8 +442,7 @@ class Oefening:
         
         if self.trainingsgewicht is None:
             return f"{self.oefening.value[0].upper()} (volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
-        else:
-            return f"{self.oefening.value[0].upper()} (TM: {self.trainingsgewicht:.1f} kg, volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
+        return f"{self.oefening.value[0].upper()} (TM: {self.trainingsgewicht:.1f} kg, volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
     
     def paneel(
         self,
@@ -477,7 +469,7 @@ class Sessie:
     week: int
     dag: int
     datum: dt.date
-    oefeningen: List[Oefening]
+    oefeningen: List[SessieOefening]
     
     @classmethod
     def huidig(cls):
@@ -535,7 +527,7 @@ class Sessie:
         
         for oefening_dict in trainingsschema:
             
-            oefening = Oefening.nieuw(
+            oefening = SessieOefening.nieuw(
                 oefening = oefening_dict["oefening"],
                 sjablonen = oefening_dict["sjablonen"],
                 week = week,
