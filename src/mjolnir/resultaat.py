@@ -2,12 +2,102 @@ from dataclasses import dataclass
 import datetime as dt
 from pathlib import Path
 import re
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List, TYPE_CHECKING
 
-from grienetsiis import opslaan_json, openen_json
+from grienetsiis import Decoder, opslaan_json, openen_json
 
 from mjolnir.enums import OefeningEnum, GewichtType, ENUMS
 
+
+if TYPE_CHECKING:
+    from mjolnir.sessie import Sessie, SessieOefening, SessieSet
+
+@dataclass
+class ResultaatSet:
+    
+    repetities: int
+    gewicht: float | None = None
+    
+    DECODER: ClassVar[Decoder | None] = None
+    
+    @classmethod
+    def van_sessie(
+        cls,
+        sessie_set: "SessieSet",
+        ) -> "ResultaatSet":
+        
+        if sessie_set.gewicht_type == GewichtType.GEWICHTLOOS:
+            return cls(
+                repetities = sessie_set.repetitie_gedaan,
+                )
+        return cls(
+            repetities = sessie_set.repetitie_gedaan,
+            gewicht = sessie_set.gewicht_gedaan,
+            )
+    
+    @classmethod
+    def van_json(
+        cls,
+        **dict,
+        ) -> "ResultaatOefening":
+        
+        return cls(**dict)
+    
+    @property
+    def volume(self) -> float | None:
+        if self.gewicht is None:
+            return None
+        return self.gewicht * self.repetities
+    
+    @property
+    def e1rm(self) -> float | None:
+        if self.gewicht is None:
+            return None
+        return self.gewicht * (1 + self.repetities/30)
+
+@dataclass
+class ResultaatOefening:
+    
+    oefening: OefeningEnum
+    sets: List[ResultaatSet]
+    
+    DECODER: ClassVar[Decoder | None] = None
+    
+    @classmethod
+    def van_sessie(
+        cls,
+        sessie_oefening: "SessieOefening",
+        ) -> "ResultaatOefening":
+        
+        sets = []
+        
+        for sessie_setgroep in sessie_oefening.sets.values():
+            for sessie_set in sessie_setgroep:
+                resultaat_set = ResultaatSet.van_sessie(sessie_set)
+                sets.append(resultaat_set)
+        
+        return cls(
+            oefening = sessie_oefening.oefening,
+            sets = sets,
+            )
+    
+    @classmethod
+    def van_json(
+        cls,
+        **dict,
+        ) -> "ResultaatOefening":
+        
+        return cls(**dict)
+    
+    @property
+    def volume(self) -> float | None:
+        som = sum(set.volume for set in self.sets if set.volume is not None)
+        return som if som > 0.0 else None
+    
+    @property
+    def e1rm(self) -> float | None:
+        e1rm = max(set.volume for set in self.sets if set.volume is not None)
+        return e1rm if e1rm > 0.0 else None
 
 @dataclass
 class Resultaat:
@@ -16,36 +106,22 @@ class Resultaat:
     week: int
     dag: int
     datum: dt.date
-    oefeningen: List[Dict[str, Any]]
+    oefeningen: List[ResultaatOefening]
+    
+    DECODER: ClassVar[Decoder | None] = None
     
     @classmethod
     def van_sessie(
         cls,
-        sessie
+        sessie: "Sessie",
         ) -> "Resultaat":
         
         oefeningen = []
         
-        for oefening in sessie.oefeningen:
+        for sessie_oefening in sessie.oefeningen:
             
-            oefening_dict = {
-                "oefening": oefening.oefening,
-                "sets": [],
-                }
-            
-            for sets in oefening.sets.values():
-                for set in sets:
-                    if set.gewicht_type == GewichtType.GEWICHTLOOS:
-                        oefening_dict["sets"].append({
-                            "repetities": set.repetitie_gedaan,
-                            })
-                    else:
-                        oefening_dict["sets"].append({
-                            "repetities": set.repetitie_gedaan,
-                            "gewicht": set.gewicht_gedaan,
-                            })
-            
-            oefeningen.append(oefening_dict)
+            resultaat_oefening = ResultaatOefening.van_sessie(sessie_oefening)
+            oefeningen.append(resultaat_oefening)
         
         return cls(
             schema_uuid = sessie.schema_uuid,
@@ -73,12 +149,15 @@ class Resultaat:
         ) -> "Resultaat":
             return openen_json(
                 bestandspad = bestandspad,
-                decoder_functie = cls.van_json,
+                decoder_functie = Resultaat.van_json,
+                decoder_lijst = [
+                    ResultaatOefening.DECODER,
+                    ResultaatSet.DECODER,
+                    ],
                 enum_dict = ENUMS,
                 )
     
     def opslaan(self):
-        
         opslaan_json(
             self.naar_json(),
             self.bestandspad,
@@ -95,7 +174,7 @@ class Resultaat:
             }
     
     @staticmethod
-    def oefening(
+    def     oefening(
         oefening: OefeningEnum,
         aantal: int = 10,
         ) -> List[Dict[str, Any]]:
@@ -108,11 +187,11 @@ class Resultaat:
         for bestandspad in reversed(bestandspaden):
             resultaat = Resultaat.openen(bestandspad)
             
-            for _oefening in resultaat.oefeningen:
-                if _oefening["oefening"] == oefening:
+            for resultaat_oefening in resultaat.oefeningen:
+                if resultaat_oefening.oefening == oefening:
                     resultaten.append({
                         "datum": resultaat.datum,
-                        "sets": _oefening["sets"],
+                        "sets": resultaat_oefening.sets,
                         })
                     
                     break
@@ -133,7 +212,7 @@ class Resultaat:
         
         for resultaat in resultaten:
             
-            e1rm = max(Resultaat.epley(set["gewicht"], set["repetities"]) for set in resultaat["sets"])
+            e1rm = max(Resultaat.epley(resultaat_set.gewicht, resultaat_set.repetities) for resultaat_set in resultaat["sets"])
             e1rms.append({
                 "datum": resultaat["datum"],
                 "e1rm": e1rm,
@@ -151,3 +230,18 @@ class Resultaat:
     @property
     def bestandspad(self) -> Path:
         return Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
+
+ResultaatSet.DECODER = Decoder(
+    decoder_functie = ResultaatSet.van_json,
+    velden = frozenset((
+        "repetities",
+        "gewicht",
+        ))
+    )
+ResultaatOefening.DECODER = Decoder(
+    decoder_functie = ResultaatOefening.van_json,
+    velden = frozenset((
+        "oefening",
+        "sets",
+        ))
+    )
