@@ -196,8 +196,8 @@ class Resultaat:
         ) -> "Resultaat":
             return openen_json(
                 bestandspad = bestandspad,
-                decoder_functie = Resultaat.van_json,
                 decoder_lijst = [
+                    Resultaat.DECODER,
                     ResultaatOefening.DECODER,
                     ResultaatSet.DECODER,
                     ],
@@ -236,5 +236,15 @@ ResultaatOefening.DECODER = Decoder(
     velden = frozenset((
         "oefening",
         "sets",
+        ))
+    )
+Resultaat.DECODER = Decoder(
+    decoder_functie = Resultaat.van_json,
+    velden = frozenset((
+        "schema_uuid",
+        "week",
+        "dag",
+        "datum",
+        "oefeningen",
         ))
     )
