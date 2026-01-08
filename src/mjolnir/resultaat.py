@@ -119,7 +119,7 @@ class ResultaatOefening:
     def recent(
         oefening: OefeningEnum,
         aantal: int = 10,
-        ) -> List[Dict[str, Any]]:
+        ) -> Dict[str, List[str]]:
         
         resultaten = []
         
@@ -135,13 +135,31 @@ class ResultaatOefening:
                         "datum": resultaat.datum,
                         "resultaat": resultaat_oefening,
                         })
-                    
                     break
             
             if len(resultaten) == aantal:
                 break
         
-        return resultaten
+        if len(resultaten) == 0:
+            return {}
+        
+        resultaten_dict = {
+            "datum": [],
+            "volume": [],
+            "e1rm": [],
+            } | {
+            f"set_{nummer + 1}": [] for nummer in range(max(len(resultaat["resultaat"].sets) for resultaat in resultaten))
+            }
+        
+        for resultaat in resultaten:
+            resultaten_dict["datum"].append(resultaat["datum"].strftime("%a %d %b %Y"))
+            resultaten_dict["volume"].append(resultaat["resultaat"].volume)
+            resultaten_dict["e1rm"].append(resultaat["resultaat"].e1rm)
+            
+            for nummer, resultaat_set in enumerate(resultaat["resultaat"].sets):
+                resultaten_dict[f"set_{nummer + 1}"].append(resultaat_set.__repr__())
+        
+        return resultaten_dict
     
     @staticmethod
     def recent_e1rm(
@@ -149,7 +167,10 @@ class ResultaatOefening:
         aantal: int = 10,
         ) -> List[Dict[str, Any]]:
         
-        resultaten = ResultaatOefening.recent(oefening, aantal)
+        resultaten = ResultaatOefening.recent(
+            oefening = oefening,
+            aantal = aantal,
+            )
         e1rms = []
         
         for resultaat in resultaten:
@@ -161,7 +182,7 @@ class ResultaatOefening:
                 })
         
         return e1rms
-    
+
 @dataclass
 class Resultaat:
     
