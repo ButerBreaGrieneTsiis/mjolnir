@@ -53,7 +53,7 @@ class ResultaatSet:
     def e1rm(self) -> float | None:
         if self.gewicht is None:
             return None
-        return self.gewicht * (1 + self.repetities/30)
+        return round(self.gewicht * (1 + self.repetities/30), 2)
 
 @dataclass
 class ResultaatOefening:
@@ -96,7 +96,7 @@ class ResultaatOefening:
     
     @property
     def e1rm(self) -> float | None:
-        e1rm = max(set.volume for set in self.sets if set.volume is not None)
+        e1rm = max(set.e1rm for set in self.sets if set.e1rm is not None)
         return e1rm if e1rm > 0.0 else None
     
     @staticmethod
