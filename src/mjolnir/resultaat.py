@@ -43,6 +43,16 @@ class ResultaatSet:
         
         return cls(**dict)
     
+    def naar_json(self) -> Dict[str, Any]:
+        if self.gewicht is None:
+            return {
+                "repetities": self.repetities,
+                }
+        return {
+                "repetities": self.repetities,
+                "gewicht": self.gewicht,
+                }
+    
     @property
     def volume(self) -> float | None:
         if self.gewicht is None:
@@ -88,6 +98,12 @@ class ResultaatOefening:
         ) -> "ResultaatOefening":
         
         return cls(**dict)
+    
+    def naar_json(self) -> Dict[str, Any]:
+        return {
+            "oefening": self.oefening,
+            "sets": self.sets,
+            }
     
     @property
     def volume(self) -> float | None:
@@ -206,12 +222,17 @@ class Resultaat:
     
     def opslaan(self):
         opslaan_json(
-            self.naar_json(),
-            self.bestandspad,
+            object = self,
+            bestandspad = self.bestandspad,
+            encoder_dict = {
+                "Resultaat": "naar_json",
+                "ResultaatOefening": "naar_json",
+                "ResultaatSet": "naar_json",
+                },
             enum_dict = ENUMS,
             )
     
-    def naar_json(self):
+    def naar_json(self) -> Dict[str, Any]:
         return {
             "schema_uuid": self.schema_uuid,
             "week": self.week,
