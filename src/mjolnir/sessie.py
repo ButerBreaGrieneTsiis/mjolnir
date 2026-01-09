@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Dict, List, Tuple
 import streamlit as st
 
 from mjolnir.belading import Halter
-from mjolnir.enums import OefeningEnum, OefeningLichaamsgewicht, OefeningBarbell, OefeningCurl, OefeningDumbbell, GewichtType, RepetitieType, SetType, SetGroepType, Status, HALTERS
+from mjolnir.enums import Oefening, GewichtType, RepetitieType, SetType, SetGroepType, Status
 from mjolnir.register import Register
 from mjolnir.resultaat import ResultaatOefening, Resultaat
 
@@ -22,7 +22,7 @@ class SessieSet:
     
     setcode: str
     
-    oefening: OefeningEnum
+    oefening: Oefening
     set_nummer: int
     
     set_type: SetType
@@ -45,7 +45,7 @@ class SessieSet:
         cls,
         setcode: str,
         set_nummer: int,
-        oefening: OefeningEnum,
+        oefening: Oefening,
         trainingsgewichten,
         ) -> "SessieSet":
         
@@ -186,7 +186,7 @@ class SessieSet:
         
         if st.session_state.get(f"knop_gewicht_{oefening_tekst}_{self.set_nummer}", False):
             
-            if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
+            if self.oefening.halter_type is not None:
                 self.halter = self.halter.halterstang.laden(
                     gewicht = st.session_state[f"gewicht_ingevuld_{oefening_tekst}_{self.set_nummer}"],
                     halterschijven = st.session_state["register"].halterschijven.filter(diameter = self.halter.halterstang.diameter).lijst,
@@ -224,12 +224,12 @@ class SessieSet:
         
         if self.gewicht_type != GewichtType.GEWICHTLOOS:
             kolom_gewicht.markdown("**gewicht**")
-            if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
+            if self.oefening.halter_type is not None:
                 kolom_gewicht.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
             else:
                 kolom_gewicht.markdown(f"{f"{self.gewicht}".replace(".", ",")} kg")
         
-        if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
+        if self.oefening.halter_type is not None:
             kolom_halter.markdown("**halter**")
             kolom_halter.markdown(self.halter)
         
@@ -317,16 +317,16 @@ class SetKnop:
 @dataclass
 class SessieOefening:
     
-    oefening: OefeningEnum
+    oefening: Oefening
     sets: Dict[str, List[SessieSet]]
     setknoppen: Dict[str, SetKnop] = None
     trainingsgewicht: float = None
     
     def __post_init__(self):
         
-        if self.oefening.__class__ in (OefeningBarbell, OefeningCurl, OefeningDumbbell):
+        if self.oefening.halter_type is not None:
             
-            halterstangen = Register().halterstangen.filter(halter_type = HALTERS[self.oefening.__class__.__name__]).lijst
+            halterstangen = Register().halterstangen.filter(halter_type = self.oefening.halter_type).lijst
             
             if len(halterstangen) > 1:
                 raise NotImplementedError("momenteel wordt maximaal één halterstang ondersteund per halter_type")
@@ -368,7 +368,7 @@ class SessieOefening:
     @classmethod
     def nieuw(
         cls,
-        oefening: OefeningEnum,
+        oefening: Oefening,
         sjablonen: List[str],
         week: int,
         trainingsgewichten: List[Dict[str, Any]],
@@ -433,13 +433,13 @@ class SessieOefening:
     
     @property
     def volume(self) -> float | None:
-        if self.oefening.__class__ == OefeningLichaamsgewicht:
+        if self.oefening.gewichtloos:
             return None
         return sum(sessie_set.volume for sessie_setgroep in self.sets.values() for sessie_set in sessie_setgroep)
     
     @property
     def e1rm(self) -> float | None:
-        if self.oefening.__class__ == OefeningLichaamsgewicht:
+        if self.oefening.gewichtloos:
             return None
         return max(sessie_set.e1rm for sessie_setgroep in self.sets.values() for sessie_set in sessie_setgroep)
     

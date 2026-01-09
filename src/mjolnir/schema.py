@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import datetime as dt
 from typing import ClassVar, Dict, List
 
-from mjolnir.enums import OefeningType, RepetitieType, GewichtType, SetType, OefeningEnum, Status, SetGroepType
+from mjolnir.enums import OefeningType, RepetitieType, GewichtType, SetType, Oefening, Status, SetGroepType
 from mjolnir.register import GeregistreerdObject, Register
 
 from grienetsiis import invoer_validatie, invoer_kiezen
@@ -168,7 +168,7 @@ class Schema(GeregistreerdObject):
     datum_begin: dt.date = None
     datum_eind: dt.date = None
     oefeningen: Dict[str, Dict[str, List[Sjabloon]]] = None
-    trainingsgewichten: List[Dict[str, OefeningEnum | float]] = None
+    trainingsgewichten: List[Dict[str, Oefening | float]] = None
     sessies: Dict[str, Dict[str, dt.date]] = None
     
     BESTANDSNAAM: ClassVar[str] = "schema"
@@ -207,7 +207,7 @@ class Schema(GeregistreerdObject):
                 if len(oefeningen[f"dag {dag}"]) > 0:
                     print(f"\nschema voor dag {dag}")
                     for oefening_sjablonen in oefeningen[f"dag {dag}"]:
-                        print(f"  oefening \"{oefening_sjablonen["oefening"].value[0]}\"")
+                        print(f"  oefening \"{oefening_sjablonen["oefening"].naam}\"")
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                     
@@ -221,15 +221,15 @@ class Schema(GeregistreerdObject):
                 
                 oefening_type = invoer_kiezen(
                     beschrijving = "oefeningstype",
-                    keuzes = {enum.value[0]: enum for enum in OefeningType},
+                    keuzes = {enum.naam: enum for enum in OefeningType},
                     )
                 
                 oefening = invoer_kiezen(
                     beschrijving = "oefening",
-                    keuzes = {enum.value[0]: enum for enum in oefening_type.value[1]},
+                    keuzes = {enum.naam: enum for enum in oefening_type.gewicht_types},
                     )
                 
-                print(f"\n>>> oefening \"{oefening.value[0]}\" gekozen")
+                print(f"\n>>> oefening \"{oefening.naam}\" gekozen")
                 
                 oefening_sjablonen = {
                     "oefening": oefening,
@@ -239,7 +239,7 @@ class Schema(GeregistreerdObject):
                 while True:
                     
                     if len(oefening_sjablonen["sjablonen"]) > 0:
-                        print(f"\nsjablonen voor {oefening.value[0]}")
+                        print(f"\nsjablonen voor {oefening.naam}")
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                         
@@ -259,7 +259,7 @@ class Schema(GeregistreerdObject):
                     sjabloon_uuid = Register().sjablonen.filter(
                         weken = [0, cls.weken],
                         setgroep_type = setgroep_type,
-                        gewicht_type = oefening_type.value[2],
+                        gewicht_type = oefening_type.gewicht_types,
                         ).kiezen()
                     sjabloon = Register().sjablonen[sjabloon_uuid]
                     
@@ -269,7 +269,7 @@ class Schema(GeregistreerdObject):
                         
                         if not any([oefening == trainingsgewicht["oefening"] for trainingsgewicht in trainingsgewichten]):
                         
-                            print(f"\ntrainingsgewicht nodig voor oefening \"{oefening.value[0]}\"")
+                            print(f"\ntrainingsgewicht nodig voor oefening \"{oefening.naam}\"")
                             
                             trainingsgewicht = invoer_validatie(
                                 f"trainingsgewicht",

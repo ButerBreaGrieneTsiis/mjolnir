@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Dict, List, TYPE_CHECKING
 
 from grienetsiis import Decoder, opslaan_json, openen_json
 
-from mjolnir.enums import OefeningEnum, GewichtType, ENUMS
+from mjolnir.enums import Oefening, GewichtType, ENUMS
 
 
 if TYPE_CHECKING:
@@ -68,7 +68,7 @@ class ResultaatSet:
 @dataclass
 class ResultaatOefening:
     
-    oefening: OefeningEnum
+    oefening: Oefening
     sets: List[ResultaatSet]
     
     DECODER: ClassVar[Decoder | None] = None
@@ -117,7 +117,7 @@ class ResultaatOefening:
     
     @staticmethod
     def recent(
-        oefening: OefeningEnum,
+        oefening: Oefening,
         aantal: int = 10,
         ) -> Dict[str, List[str]]:
         
@@ -163,7 +163,7 @@ class ResultaatOefening:
     
     @staticmethod
     def recent_e1rm(
-        oefening: OefeningEnum,
+        oefening: Oefening,
         aantal: int = 10,
         ) -> List[Dict[str, Any]]:
         
