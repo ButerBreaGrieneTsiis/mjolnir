@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Dict, List, TYPE_CHECKING
 from grienetsiis import Decoder, opslaan_json, openen_json
 
 from mjolnir.enums import Oefening, GewichtType, ENUMS
+from mjolnir.register import Register
 
 
 if TYPE_CHECKING:
@@ -52,6 +53,18 @@ class ResultaatSet:
                 "repetities": self.repetities,
                 "gewicht": self.gewicht,
                 }
+    
+    @property
+    def tekst(self) -> str:
+        if self.gewicht is None:
+            return f"{self.repetities}"
+        
+        gewicht_tekst = f"{self.gewicht:.2f}"
+        if gewicht_tekst[-2:] == "00":
+            return f"{self.repetities}@{gewicht_tekst[:-3]}"
+        if gewicht_tekst[-1] == "0":
+            return f"{self.repetities}@{gewicht_tekst[:-1]}"
+        return f"{self.repetities}@{gewicht_tekst}"
     
     @property
     def volume(self) -> float | None:
@@ -107,13 +120,15 @@ class ResultaatOefening:
     
     @property
     def volume(self) -> float | None:
-        som = sum(set.volume for set in self.sets if set.volume is not None)
-        return som if som > 0.0 else None
+        if self.oefening.gewichtloos:
+            return None
+        return sum(set.volume for set in self.sets)
     
     @property
     def e1rm(self) -> float | None:
-        e1rm = max(set.e1rm for set in self.sets if set.e1rm is not None)
-        return e1rm if e1rm > 0.0 else None
+        if self.oefening.gewichtloos:
+            return None
+        return max(set.e1rm for set in self.sets)
     
     @staticmethod
     def recent(
@@ -133,7 +148,10 @@ class ResultaatOefening:
                 if resultaat_oefening.oefening == oefening:
                     resultaten.append({
                         "datum": resultaat.datum,
-                        "resultaat": resultaat_oefening,
+                        "schema": Register().schema[resultaat.schema_uuid].naam,
+                        "week": resultaat.week,
+                        "dag": resultaat.dag,
+                        "resultaat_oefening": resultaat_oefening,
                         })
                     break
             
@@ -145,19 +163,28 @@ class ResultaatOefening:
         
         resultaten_dict = {
             "datum": [],
+            "# sets": [],
+            "sets": [],
             "volume": [],
             "e1rm": [],
-            } | {
-            f"set_{nummer + 1}": [] for nummer in range(max(len(resultaat["resultaat"].sets) for resultaat in resultaten))
+            "schema": [],
+            "week": [],
+            "dag": [],
             }
         
         for resultaat in resultaten:
             resultaten_dict["datum"].append(resultaat["datum"].strftime("%a %d %b %Y"))
-            resultaten_dict["volume"].append(resultaat["resultaat"].volume)
-            resultaten_dict["e1rm"].append(resultaat["resultaat"].e1rm)
-            
-            for nummer, resultaat_set in enumerate(resultaat["resultaat"].sets):
-                resultaten_dict[f"set_{nummer + 1}"].append(resultaat_set.__repr__())
+            resultaten_dict["# sets"].append(len(resultaat["resultaat_oefening"].sets))
+            resultaten_dict["sets"].append(", ".join(resultaat_set.tekst for resultaat_set in resultaat["resultaat_oefening"].sets))
+            resultaten_dict["volume"].append(resultaat["resultaat_oefening"].volume)
+            resultaten_dict["e1rm"].append(resultaat["resultaat_oefening"].e1rm)
+            resultaten_dict["schema"].append(resultaat["schema"])
+            resultaten_dict["week"].append(resultaat["week"])
+            resultaten_dict["dag"].append(resultaat["dag"])
+        
+        if oefening.gewichtloos:
+            del resultaten_dict["volume"]
+            del resultaten_dict["e1rm"]
         
         return resultaten_dict
     
