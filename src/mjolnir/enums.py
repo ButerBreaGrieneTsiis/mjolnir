@@ -11,7 +11,7 @@ class HalterType(Enum):
 class GewichtType(Enum):
     
     GEWICHTLOOS = "gewichtloos"
-    GEWICHT = "vast"
+    GEWICHT = "gewicht"
     PERCENTAGE = "percentage"
     VRIJ = "vrij"
 
