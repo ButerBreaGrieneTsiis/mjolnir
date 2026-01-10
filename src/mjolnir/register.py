@@ -245,7 +245,7 @@ class GeregistreerdObject(metaclass = GeregistreerdObjectMeta):
                     beschrijving = veld,
                     keuzes = {enum.value: enum for enum in _type},
                     )
-            elif _type in [int, float, str]:
+            elif _type in (int, float, str):
                 waarde = invoer_validatie(
                     beschrijving = veld,
                     type = _type,
