@@ -10,6 +10,7 @@ from typing import Any, ClassVar, Dict, List, Tuple
 import streamlit as st
 
 from mjolnir.belading import Halter
+from mjolnir.constantes import REPETITIES_MAX
 from mjolnir.enums import Oefening, GewichtType, RepetitieType, SetType, SetGroepType, Status
 from mjolnir.register import Register
 from mjolnir.resultaat import ResultaatOefening, Resultaat
@@ -37,8 +38,6 @@ class SessieSet:
     afgerond: bool = False
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
-    
-    REPETITIES_MAX: ClassVar[int] = 30
     
     @classmethod
     def van_setcode(
@@ -153,7 +152,7 @@ class SessieSet:
             max_repetities = self.repetitie_aantal[1]
             aantal_repetities = self.repetitie_aantal[1]
         else:
-            max_repetities = self.REPETITIES_MAX
+            max_repetities = REPETITIES_MAX
             if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
                 aantal_repetities = self.repetitie_aantal[1]
             else:
