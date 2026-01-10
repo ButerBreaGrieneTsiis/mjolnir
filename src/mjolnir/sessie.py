@@ -49,7 +49,7 @@ class SessieSet:
         trainingsgewichten,
         ) -> "SessieSet":
         
-        set_type, set_aantal = cls.sets_uit_setcode(setcode)
+        set_type, _ = cls.sets_uit_setcode(setcode)
         repetitie_type, repetitie_aantal = cls.repetities_uit_setcode(setcode)
         gewicht_type, gewicht = cls.gewicht_uit_setcode(setcode, trainingsgewichten, oefening)
         
@@ -222,7 +222,7 @@ class SessieSet:
         kolom_repetities.markdown("**repetities**")
         kolom_repetities.markdown(f"{self.repetitie_tekst} ({self.repetitie_type.value})")
         
-        if self.gewicht_type != GewichtType.GEWICHTLOOS:
+        if not self.oefening.gewichtloos:
             kolom_gewicht.markdown("**gewicht**")
             if self.oefening.halter_type is not None:
                 kolom_gewicht.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
@@ -273,13 +273,13 @@ class SessieSet:
     
     @property
     def volume(self) -> float | None:
-        if self.gewicht_type == GewichtType.GEWICHTLOOS:
+        if self.oefening.gewichtloos:
             return None
         return self.gewicht_gedaan * self.repetitie_gedaan
     
     @property
     def e1rm(self) -> float | None:
-        if self.gewicht_type == GewichtType.GEWICHTLOOS:
+        if self.oefening.gewichtloos:
             return None
         return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
 
