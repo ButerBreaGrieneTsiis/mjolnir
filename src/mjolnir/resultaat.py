@@ -134,7 +134,7 @@ class ResultaatOefening:
     def recent(
         oefening: Oefening,
         aantal: int = 10,
-        ) -> Dict[str, List[str]]:
+        ) -> Dict[str, List[Any]]:
         
         resultaten = []
         
