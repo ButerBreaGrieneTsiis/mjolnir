@@ -166,55 +166,53 @@ class SessieSet:
         else:
             hoeveelheid_gewicht = 0.0
         
-        oefening_tekst = self.oefening.value[0].replace(" ", "_")
-        
         # status expander van deze set
-        if f"expander_{oefening_tekst}_{self.set_nummer}" not in st.session_state:
-            st.session_state[f"expander_{oefening_tekst}_{self.set_nummer}"] = True
+        if f"expander_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = True
         
         # status expander van de volgende set
-        if f"expander_{oefening_tekst}_{self.set_nummer + 1}" not in st.session_state:
-            st.session_state[f"expander_{oefening_tekst}_{self.set_nummer + 1}"] = False
+        if f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}" not in st.session_state:
+            st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = False
         
         # aantal repetities van deze set
-        if f"repetities_{oefening_tekst}_{self.set_nummer}" not in st.session_state:
-            st.session_state[f"repetities_{oefening_tekst}_{self.set_nummer}"] = aantal_repetities
+        if f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"] = aantal_repetities
         
         # hoeveelheid gewicht van deze set
-        if f"gewicht_{oefening_tekst}_{self.set_nummer}" not in st.session_state:
-            st.session_state[f"gewicht_{oefening_tekst}_{self.set_nummer}"] = hoeveelheid_gewicht
+        if f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = hoeveelheid_gewicht
         
-        if st.session_state.get(f"knop_gewicht_{oefening_tekst}_{self.set_nummer}", False):
+        if st.session_state.get(f"knop_gewicht_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
             if self.oefening.halter_type is not None:
                 self.halter = self.halter.halterstang.laden(
-                    gewicht = st.session_state[f"gewicht_ingevuld_{oefening_tekst}_{self.set_nummer}"],
+                    gewicht = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"],
                     halterschijven = st.session_state["register"].halterschijven.filter(diameter = self.halter.halterstang.diameter).lijst,
                     )
-                st.session_state[f"gewicht_{oefening_tekst}_{self.set_nummer}"] = self.halter.massa
+                st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = self.halter.massa
             else:
-                self.gewicht = st.session_state[f"gewicht_ingevuld_{oefening_tekst}_{self.set_nummer}"]
-                st.session_state[f"gewicht_{oefening_tekst}_{self.set_nummer}"] = self.gewicht
+                self.gewicht = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
+                st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = self.gewicht
         
-        if st.session_state.get(f"knop_{oefening_tekst}_{self.set_nummer}", False):
+        if st.session_state.get(f"knop_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
-            self.repetitie_gedaan = st.session_state[f"repetities_{oefening_tekst}_{self.set_nummer}"]
-            self.gewicht_gedaan = st.session_state[f"gewicht_{oefening_tekst}_{self.set_nummer}"]
+            self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"]
+            self.gewicht_gedaan = st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"]
             
             self.afgerond = True
             
-            st.session_state[f"expander_{oefening_tekst}_{self.set_nummer}"] = False
-            st.session_state[f"expander_{oefening_tekst}_{self.set_nummer + 1}"] = True
+            st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = False
+            st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = True
         
-        if f"label_{oefening_tekst}_{self.set_nummer}" not in st.session_state:
-            st.session_state[f"label_{oefening_tekst}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.setcode}"
+        if f"label_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
+            st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.setcode}"
         else:
             if self.afgerond:
-                st.session_state[f"label_{oefening_tekst}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.setcode}"
+                st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.setcode}"
         
         expander = kolom.expander(
-            label = st.session_state[f"label_{oefening_tekst}_{self.set_nummer}"],
-            expanded = st.session_state[f"expander_{oefening_tekst}_{self.set_nummer}"],
+            label = st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"],
+            expanded = st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"],
             )
         
         kolom_repetities, kolom_gewicht, kolom_halter = expander.columns([0.2, 0.2, 0.6])
@@ -236,7 +234,7 @@ class SessieSet:
         if self.gewicht_type == GewichtType.VRIJ:
             
             formulier_gewicht = expander.form(
-                key = f"formulier_gewicht_{oefening_tekst}_{self.set_nummer}",
+                key = f"formulier_gewicht_{self.oefening.naam_underscore}_{self.set_nummer}",
                 border = False,
                 )
             
@@ -244,16 +242,16 @@ class SessieSet:
                 label = "gewicht",
                 min_value = 0,
                 max_value = 100,
-                key = f"gewicht_ingevuld_{oefening_tekst}_{self.set_nummer}",
+                key = f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}",
                 )
             
             formulier_gewicht.form_submit_button(
                 label = "gewicht instellen",
-                key = f"knop_gewicht_{oefening_tekst}_{self.set_nummer}",
+                key = f"knop_gewicht_{self.oefening.naam_underscore}_{self.set_nummer}",
                 )
         
         formulier = expander.form(
-            key = f"formulier_{oefening_tekst}_{self.set_nummer}",
+            key = f"formulier_{self.oefening.naam_underscore}_{self.set_nummer}",
             border = False,
             )
         
@@ -261,12 +259,12 @@ class SessieSet:
             label = "repetities",
             min_value = 0,
             max_value = max_repetities,
-            key = f"repetities_{oefening_tekst}_{self.set_nummer}",
+            key = f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
         formulier.form_submit_button(
             label = "afronden",
-            key = f"knop_{oefening_tekst}_{self.set_nummer}",
+            key = f"knop_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
         return expander
@@ -286,7 +284,7 @@ class SessieSet:
 @dataclass
 class SetKnop:
     
-    oefening: "SessieOefening"
+    sessie_oefening: "SessieOefening"
     setgroep: str
     set_sjabloon: SessieSet
     set_nummer: int
@@ -299,18 +297,16 @@ class SetKnop:
         set.set_nummer = self.set_nummer
         
         st.session_state["opslaan_uitgeschakeld"] = True
-        self.oefening.sets[self.setgroep].append(set)
+        self.sessie_oefening.sets[self.setgroep].append(set)
     
     def paneel(
         self,
         kolom,
         ):
         
-        oefening = self.oefening.oefening.value[0].replace(" ", "_")
-        
         kolom.button(
             label = "set toevoegen",
-            key = f"setknop_{oefening}_{self.setgroep}",
+            key = f"setknop_{self.sessie_oefening.oefening.naam_underscore}_{self.setgroep}",
             on_click = self.toevoegen_set,
             )
 
@@ -355,7 +351,7 @@ class SessieOefening:
             if len(sessie_sets) == 1 and sessie_sets[0].set_type in (SetType.AMSAP, SetType.VRIJ):
                 
                 setknop = SetKnop(
-                    oefening = self,
+                    sessie_oefening = self,
                     setgroep = sessie_setgroep,
                     set_sjabloon = deepcopy(sessie_sets[0]),
                     set_nummer = sessie_sets[0].set_nummer,
@@ -447,11 +443,11 @@ class SessieOefening:
     def titel(self) -> str:
         
         if self.volume is None and self.e1rm is None:
-            return f"{self.oefening.value[0].upper()}"
+            return f"{self.oefening.naam.upper()}"
         
         if self.trainingsgewicht is None:
-            return f"{self.oefening.value[0].upper()} (volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
-        return f"{self.oefening.value[0].upper()} (TM: {self.trainingsgewicht:.1f} kg, volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
+            return f"{self.oefening.naam.upper()}\n - volume: {self.volume:.1f} kg\n - e1rm: {self.e1rm:.1f} kg"
+        return f"{self.oefening.naam.upper()}\n - TM: {self.trainingsgewicht:.1f} kg\n - volume: {self.volume:.1f} kg\n - e1rm: {self.e1rm:.1f} kg"
     
     def paneel(
         self,
@@ -479,21 +475,19 @@ class SessieOefening:
         kolom,
         ):
         
-        oefening_tekst = self.oefening.value[0].replace(" ", "_")
-        
-        if f"recent_resultaat_{oefening_tekst}" not in st.session_state:
-            st.session_state[f"recent_resultaat_{oefening_tekst}"] = ResultaatOefening.recent(self.oefening, 5)
+        if f"recent_resultaat_{self.oefening.naam_underscore}" not in st.session_state:
+            st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"] = ResultaatOefening.recent(self.oefening, 5)
         
         expander = kolom.expander(
-            label = f"recente resultaten {self.oefening.value[0]}",
+            label = f"recente resultaten {self.oefening.naam}",
             )
-        if st.session_state[f"recent_resultaat_{oefening_tekst}"]:
+        if st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"]:
             expander.dataframe(
-                data = st.session_state[f"recent_resultaat_{oefening_tekst}"],
+                data = st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"],
                 hide_index = True,
                 )
         else:
-            expander.write("deze oefening is nog niet uitgevoerd")
+            expander.markdown("deze oefening is nog niet uitgevoerd")
 
 @dataclass
 class Sessie:

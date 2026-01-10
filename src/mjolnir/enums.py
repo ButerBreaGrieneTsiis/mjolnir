@@ -125,6 +125,10 @@ class Oefening(Enum):
         return self._value
     
     @property
+    def naam_underscore(self) -> str:
+        return self._value.replace(" ", "_")
+    
+    @property
     def gewicht_types(self) -> List[GewichtType]:
         return self.oefening_type.gewicht_types
     
