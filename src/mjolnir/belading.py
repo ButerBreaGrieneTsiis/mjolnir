@@ -178,19 +178,13 @@ class Halter:
             sum([halterschijf.massa for halterschijf in self.halterschijven_links]) + \
             sum([halterschijf.massa for halterschijf in self.halterschijven_rechts])
 
-Register.DECODERS["halterstangen"] = {
-    "class": Halterstang,
-    "decoder_functie": Halterstang.van_json,
+Register.TYPES["halterstangen"] = {
+    "type": Halterstang,
+    "decoder": Halterstang.van_json,
+    "encoder": Halterstang.naar_json,
     }
-Register.ENCODERS["halterstangen"] = {
-    "class": Halterstang,
-    "encoder_functie": Halterstang.naar_json,
-    }
-Register.DECODERS["halterschijven"] = {
-    "class": Halterschijf,
-    "decoder_functie": Halterschijf.van_json,
-    }
-Register.ENCODERS["halterschijven"] = {
-    "class": Halterschijf,
-    "encoder_functie": Halterschijf.naar_json,
+Register.TYPES["halterstangen"] = {
+    "type": Halterschijf,
+    "decoder": Halterschijf.van_json,
+    "encoder": Halterschijf.naar_json,
     }

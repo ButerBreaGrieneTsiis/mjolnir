@@ -2,8 +2,10 @@ from dataclasses import dataclass
 import datetime as dt
 from typing import ClassVar, Dict, List
 
+from mjolnir.constantes import *
 from mjolnir.enums import OefeningType, RepetitieType, GewichtType, SetType, Oefening, Status, SetGroepType
 from mjolnir.register import GeregistreerdObject, Register
+from mjolnir.setcode import Setcode
 
 from grienetsiis import invoer_validatie, invoer_kiezen
 
@@ -16,7 +18,7 @@ class Sjabloon(GeregistreerdObject):
     gewicht_type: GewichtType
     set_type: SetType
     weken: int = 0
-    sets: Dict[str, List[str]] = None
+    setcodes: Dict[str, List[Setcode]] | None = None
     
     BESTANDSNAAM: ClassVar[str] = "sjablonen"
     
@@ -29,21 +31,21 @@ class Sjabloon(GeregistreerdObject):
         velden,
         ):
         
-        cls = super().nieuw(velden)
+        sjabloon = super().nieuw(velden)
         
-        def sets_maken(
+        def setcodes_maken(
             gewicht_type: GewichtType,
             set_type: SetType,
-            ) -> List[str]:
+            ) -> List[Setcode]:
             
-            sets = []
+            setcodes = []
             
             while True:
                 
-                if len(sets) > 0:
+                if len(setcodes) > 0:
                     
                     print("\nde huidige sets:")
-                    [print(f"  {set}") for set in sets]
+                    [print(f"  {setcode}") for setcode in setcodes]
                     
                     if invoer_kiezen(
                         beschrijving = "nog een set toevoegen?",
@@ -53,82 +55,70 @@ class Sjabloon(GeregistreerdObject):
                         
                         break
                 
-                if set_type == SetType.VRIJ:
-                    set_tekst = "?x"
-                elif set_type == SetType.AANTAL:
-                    set_tekst = f"{invoer_validatie(
+                setcode_dict = {
+                    "set_type": set_type,
+                    "gewicht_type": gewicht_type,
+                    }
+                
+                if set_type == SetType.AANTAL:
+                    setcode_dict["set_aantal"] = invoer_validatie(
                         beschrijving = "aantal sets",
                         type = int,
-                        bereik = (1, 10),
-                        )}x"
-                else:
-                    set_tekst = f"{invoer_validatie(
+                        bereik = (1, SET_AANTAL_MAX),
+                        )
+                elif set_type == SetType.AMSAP:
+                    setcode_dict["set_aantal"] = invoer_validatie(
                         beschrijving = "minimaal aantal sets",
                         type = int,
-                        bereik = (1, 99),
-                        )}+x"
+                        bereik = (1, SET_AANTAL_MAX),
+                        )
                 
-                repetitie_type = invoer_kiezen(
+                setcode_dict["repetitie_type"] = invoer_kiezen(
                     beschrijving = "repetitie type",
                     keuzes = {repetitie_type.value: repetitie_type for repetitie_type in RepetitieType},
                     )
                 
-                if repetitie_type == RepetitieType.VRIJ:
-                    repetitie_tekst = "?"
-                elif repetitie_type == RepetitieType.AANTAL:
-                    repetitie_tekst = f"{invoer_validatie(
+                if setcode_dict["repetitie_type"] == RepetitieType.AANTAL:
+                    setcode_dict["repetitie_aantal"] = invoer_validatie(
                         beschrijving = "aantal repetities",
                         type = int,
-                        bereik = (1, 99),
-                        )}"
-                elif repetitie_type == RepetitieType.AMRAP:
-                    repetitie_tekst = f"{invoer_validatie(
-                        beschrijving = "minimaal aantal repetities",
-                        type = int,
-                        bereik = (1, 99),
-                        )}+"
-                else:
-                    repetities_minimaal = invoer_validatie(
-                        beschrijving = "minimaal aantal repetities",
-                        type = int,
-                        bereik = (1, 99),
+                        bereik = (1, REPETITIE_AANTAL_MAX),
                         )
-                    repetities_maximaal = invoer_validatie(
+                elif setcode_dict["repetitie_type"] == RepetitieType.AMRAP:
+                    setcode_dict["repetitie_aantal"] = invoer_validatie(
+                        beschrijving = "minimaal aantal repetities",
+                        type = int,
+                        bereik = (1, REPETITIE_AANTAL_MAX),
+                        )
+                elif setcode_dict["repetitie_type"] in (RepetitieType.BEREIK, RepetitieType.BEREIK_AMRAP):
+                    setcode_dict["repetitie_aantal"] = invoer_validatie(
+                        beschrijving = "minimaal aantal repetities",
+                        type = int,
+                        bereik = (1, REPETITIE_AANTAL_MAX),
+                        )
+                    setcode_dict["repetitie_maximaal"] = invoer_validatie(
                         beschrijving = "maximaal aantal repetities",
                         type = int,
-                        bereik = (1, 99),
+                        bereik = (setcode_dict["repetitie_aantal"] + 1, REPETITIE_AANTAL_MAX),
                         )
-                    
-                    if repetitie_type == RepetitieType.BEREIK:
-                        repetitie_tekst = f"{repetities_minimaal}-{repetities_maximaal}"
-                    else:
-                        repetitie_tekst = f"{repetities_minimaal}-{repetities_maximaal}+"
                 
-                if gewicht_type == GewichtType.GEWICHTLOOS:
-                    massa = ""
-                elif gewicht_type == GewichtType.GEWICHT:
-                    massa = f"@{invoer_validatie(
-                        beschrijving = "hoeveel massa",
+                if gewicht_type == GewichtType.GEWICHT:
+                    setcode_dict["gewicht_aantal"] = invoer_validatie(
+                        beschrijving = "hoeveel gewicht",
                         type = float,
-                        bereik = (1.0, 999.9),
-                        )}"
-                elif gewicht_type == GewichtType.VRIJ:
-                    massa = "@?"
-                else:
-                    massa = f"@{invoer_validatie(
+                        bereik = (0.0, GEWICHT_AANTAL_MAX),
+                        )
+                elif gewicht_type == GewichtType.PERCENTAGE:
+                    setcode_dict["gewicht_aantal"] = invoer_validatie(
                         beschrijving = "hoeveel percent",
-                        type = int,
-                        bereik = (0, 100),
-                        )}%"
+                        type = float,
+                        bereik = (0.0, 100.0),
+                        )
                 
-                if set_tekst == "1x":
-                    set = f"{repetitie_tekst}{massa}"
-                else:
-                    set = f"{set_tekst}{repetitie_tekst}{massa}"
+                setcode = Setcode(**setcode_dict)
+                setcodes.append(setcode)
                 
-                sets.append(set)
-                
-            return sets
+            return setcodes
         
         weken = invoer_kiezen(
             beschrijving = "hoeveel weken heeft dit sjabloon?",
@@ -140,23 +130,23 @@ class Sjabloon(GeregistreerdObject):
                 },
             )
         
-        sets_per_week = {}
+        setcodes_per_week = {}
         
         if weken == 0:
             print(f"\nkies de sets voor elke week")
-            sets = sets_maken(cls.gewicht_type, cls.set_type)
-            sets_per_week[f"week {weken}"] = sets
+            setcodes = setcodes_maken(sjabloon.gewicht_type, sjabloon.set_type)
+            setcodes_per_week[f"week {weken}"] = setcodes
         else:
             for week in range(1, weken + 1):
                 
                 print(f"\nkies de sets voor week {week}")
-                sets = sets_maken(cls.gewicht_type, cls.set_type)
-                sets_per_week[f"week {week}"] = sets
+                setcodes = setcodes_maken(sjabloon.gewicht_type, sjabloon.set_type)
+                setcodes_per_week[f"week {week}"] = setcodes
         
-        cls.weken = weken
-        cls.sets = sets_per_week
+        sjabloon.weken = weken
+        sjabloon.setcodes = setcodes_per_week
         
-        return cls
+        return sjabloon
 
 @dataclass
 class Schema(GeregistreerdObject):
@@ -165,11 +155,11 @@ class Schema(GeregistreerdObject):
     weken: int
     dagen: int
     status: Status = Status.GEPLAND
-    datum_begin: dt.date = None
-    datum_eind: dt.date = None
-    oefeningen: Dict[str, Dict[str, List[Sjabloon]]] = None
-    trainingsgewichten: List[Dict[str, Oefening | float]] = None
-    sessies: Dict[str, Dict[str, dt.date]] = None
+    datum_begin: dt.date | None = None
+    datum_eind: dt.date | None = None
+    oefeningen: Dict[str, Dict[str, List[Sjabloon]]] | None = None
+    trainingsgewichten: List[Dict[str, Oefening | float]] | None = None
+    sessies: Dict[str, Dict[str, dt.date]] | None = None
     
     BESTANDSNAAM: ClassVar[str] = "schema"
     
@@ -182,21 +172,21 @@ class Schema(GeregistreerdObject):
         velden,
         ) -> "Schema":
         
-        cls = super().nieuw(velden)
+        schema = super().nieuw(velden)
         
         oefeningen = {}
         trainingsgewichten = []
         sessies = {}
         
-        for week in range(1, cls.weken + 1):
+        for week in range(1, schema.weken + 1):
             sessies[f"week {week}"] = {}
-            for dag in range(1, cls.dagen + 1):
+            for dag in range(1, schema.dagen + 1):
                 sessies[f"week {week}"][f"dag {dag}"] = {
                     "datum": None,
                     "status": Status.GEPLAND,
                     }
         
-        for dag in range(1, cls.dagen + 1):
+        for dag in range(1, schema.dagen + 1):
             
             oefeningen[f"dag {dag}"] = []
             
@@ -221,12 +211,12 @@ class Schema(GeregistreerdObject):
                 
                 oefening_type = invoer_kiezen(
                     beschrijving = "oefeningstype",
-                    keuzes = {enum.naam: enum for enum in OefeningType},
+                    keuzes = {oefening_type.naam: oefening_type for oefening_type in OefeningType},
                     )
                 
                 oefening = invoer_kiezen(
                     beschrijving = "oefening",
-                    keuzes = {enum.naam: enum for enum in oefening_type.gewicht_types},
+                    keuzes = {oefening.naam: oefening for oefening in Oefening if oefening.oefening_type == oefening_type},
                     )
                 
                 print(f"\n>>> oefening \"{oefening.naam}\" gekozen")
@@ -253,11 +243,11 @@ class Schema(GeregistreerdObject):
                     
                     setgroep_type = invoer_kiezen(
                         beschrijving = "setgroep",
-                        keuzes = {enum.value: enum for enum in SetGroepType},
+                        keuzes = {setgroep_type.value: setgroep_type for setgroep_type in SetGroepType},
                         )
                     
                     sjabloon_uuid = Register().sjablonen.filter(
-                        weken = [0, cls.weken],
+                        weken = [0, schema.weken],
                         setgroep_type = setgroep_type,
                         gewicht_type = oefening_type.gewicht_types,
                         ).kiezen()
@@ -272,8 +262,9 @@ class Schema(GeregistreerdObject):
                             print(f"\ntrainingsgewicht nodig voor oefening \"{oefening.naam}\"")
                             
                             trainingsgewicht = invoer_validatie(
-                                f"trainingsgewicht",
+                                beschrijving = "trainingsgewicht",
                                 type = float,
+                                bereik = (0.0, GEWICHT_AANTAL_MAX),
                                 )
                             
                             trainingsgewichten.append({
@@ -283,28 +274,22 @@ class Schema(GeregistreerdObject):
                 
                 oefeningen[f"dag {dag}"].append(oefening_sjablonen)
         
-        cls.oefeningen = oefeningen
-        cls.trainingsgewichten = trainingsgewichten
-        cls.sessies = sessies
+        schema.oefeningen = oefeningen
+        schema.trainingsgewichten = trainingsgewichten
+        schema.sessies = sessies
         
         if len(Register().schema.filter(status = Status.HUIDIG)) == 0:
-            cls.status = Status.HUIDIG
+            schema.status = Status.HUIDIG
         
-        return cls
+        return schema
 
-Register.DECODERS["sjablonen"] = {
-    "class": Sjabloon,
-    "decoder_functie": Sjabloon.van_json,
+Register.TYPES["sjablonen"] = {
+    "type": Sjabloon,
+    "decoder": Sjabloon.van_json,
+    "encoder": Sjabloon.naar_json,
     }
-Register.ENCODERS["sjablonen"] = {
-    "class": Sjabloon,
-    "encoder_functie": Sjabloon.naar_json,
-    }
-Register.DECODERS["schema"] = {
-    "class": Schema,
-    "decoder_functie": Schema.van_json,
-    }
-Register.ENCODERS["schema"] = {
-    "class": Schema,
-    "encoder_functie": Schema.naar_json,
+Register.TYPES["schema"] = {
+    "type": Schema,
+    "decoder": Schema.van_json,
+    "encoder": Schema.naar_json,
     }
