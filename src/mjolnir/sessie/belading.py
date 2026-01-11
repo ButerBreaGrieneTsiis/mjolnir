@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from itertools import permutations, product
 from typing import ClassVar, List
 
-from mjolnir.enums import HalterType
-from mjolnir.register import GeregistreerdObject, Register
+from mjolnir.basis import GeregistreerdObject, Register
+from mjolnir.basis.enums import HalterType
 
 
 @dataclass

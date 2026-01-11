@@ -6,12 +6,12 @@ from typing import Any, ClassVar, Dict, List, TYPE_CHECKING
 
 from grienetsiis import Decoder, opslaan_json, openen_json
 
-from mjolnir.enums import Oefening, GewichtType, ENUMS
-from mjolnir.register import Register
+from mjolnir.basis import Register
+from mjolnir.basis.enums import Oefening, GewichtType, ENUMS
 
 
 if TYPE_CHECKING:
-    from mjolnir.sessie import Sessie, SessieOefening, SessieSet
+    from mjolnir.sessie.sessie import Sessie, SessieOefening, SessieSet
 
 @dataclass
 class ResultaatSet:
@@ -118,6 +118,13 @@ class ResultaatOefening:
             "sets": self.sets,
             }
     
+    # @property
+    # def tekst(self) -> str:
+    #     if 
+    #     # indien allemaal gelijk gewicht -> (rep_1, rep_2)@gewicht
+    #     # indien allemaal gelijk rep -> #sets×reps@(gewicht_1, gewicht_2)
+    #     # indien beide gelijk -> #sets×reps@gewicht
+    
     @property
     def volume(self) -> float | None:
         if self.oefening.gewichtloos:
@@ -163,7 +170,7 @@ class ResultaatOefening:
         
         resultaten_dict = {
             "datum": [],
-            "# sets": [],
+            r"#sets": [],
             "sets": [],
             "volume": [],
             "e1rm": [],
@@ -174,7 +181,7 @@ class ResultaatOefening:
         
         for resultaat in resultaten:
             resultaten_dict["datum"].append(resultaat["datum"].strftime("%a %d %b %Y"))
-            resultaten_dict["# sets"].append(len(resultaat["resultaat_oefening"].sets))
+            resultaten_dict["#sets"].append(len(resultaat["resultaat_oefening"].sets))
             resultaten_dict["sets"].append(", ".join(resultaat_set.tekst for resultaat_set in resultaat["resultaat_oefening"].sets))
             resultaten_dict["volume"].append(resultaat["resultaat_oefening"].volume)
             resultaten_dict["e1rm"].append(resultaat["resultaat_oefening"].e1rm)

@@ -2,9 +2,9 @@ from typing import Dict, Tuple
 
 from grienetsiis import Decoder, Encoder
 
-from mjolnir.constantes import *
-from mjolnir.enums import GewichtType, RepetitieType, SetType
-from mjolnir.register import  Register
+from .constantes import *
+from .enums import GewichtType, RepetitieType, SetType
+from .register import Register
 
 
 class Setcode:

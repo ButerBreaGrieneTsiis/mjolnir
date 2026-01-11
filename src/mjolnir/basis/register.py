@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from grienetsiis import openen_json, opslaan_json, invoer_validatie, invoer_kiezen, Decoder, Encoder
 
-from mjolnir.enums import ENUMS
+from .enums import ENUMS
 
 
 class Singleton(type):
@@ -118,7 +118,7 @@ class Register(dict, metaclass = Singleton):
     ENUMS: Dict[str, Enum] = ENUMS
     
     def __getattr__(self, naam):
-        
+        print(self.TYPES)
         if naam not in self.TYPES:
             raise ValueError(f"onbekend type {naam}")
         

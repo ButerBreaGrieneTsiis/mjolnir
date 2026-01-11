@@ -1,7 +1,7 @@
 import streamlit as st
 
-from mjolnir.register import Register
-from mjolnir.sessie import Sessie
+from mjolnir.basis import Register
+from mjolnir.sessie.sessie import Sessie
 
 
 st.set_page_config(layout = "wide")

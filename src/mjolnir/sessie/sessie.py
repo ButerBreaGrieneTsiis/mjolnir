@@ -5,14 +5,15 @@ import keyboard
 import locale
 import os
 import psutil
-from typing import Any, ClassVar, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import streamlit as st
 
-from mjolnir.belading import Halter
-from mjolnir.constantes import REPETITIES_MAX
-from mjolnir.enums import Oefening, GewichtType, RepetitieType, SetType, SetGroepType, Status
-from mjolnir.register import Register
+
+from mjolnir.basis import Register, Setcode
+from mjolnir.basis.constantes import *
+from mjolnir.basis.enums import Oefening, GewichtType, RepetitieType, SetType, SetGroepType, Status
+from mjolnir.sessie import Halter
 from mjolnir.resultaat import ResultaatOefening, Resultaat
 
 
@@ -21,7 +22,7 @@ locale.setlocale(locale.LC_ALL, "nl_NL.UTF-8")
 @dataclass
 class SessieSet:
     
-    setcode: str
+    setcode: Setcode
     
     oefening: Oefening
     set_nummer: int
@@ -42,7 +43,7 @@ class SessieSet:
     @classmethod
     def van_setcode(
         cls,
-        setcode: str,
+        setcode: Setcode,
         set_nummer: int,
         oefening: Oefening,
         trainingsgewichten,
@@ -70,75 +71,75 @@ class SessieSet:
         else:
             return self.setcode.split("@")[0]
     
-    @staticmethod
-    def sets_uit_setcode(setcode: str) -> Tuple[SetType, int]:
+    # @staticmethod
+    # def sets_uit_setcode(setcode: str) -> Tuple[SetType, int]:
         
-        if "x" in setcode:
-            _set_aantal = setcode.split("x")[0]
-        else:
-            _set_aantal = "1"
+    #     if "x" in setcode:
+    #         _set_aantal = setcode.split("x")[0]
+    #     else:
+    #         _set_aantal = "1"
         
-        if "?" in _set_aantal:
-            set_type = SetType.VRIJ
-            set_aantal = 0
-        elif "+" in _set_aantal:
-            set_type = SetType.AMSAP
-            set_aantal = int(_set_aantal.replace("+", ""))
-        else:
-            set_type = SetType.AANTAL
-            set_aantal = int(_set_aantal)
+    #     if "?" in _set_aantal:
+    #         set_type = SetType.VRIJ
+    #         set_aantal = 0
+    #     elif "+" in _set_aantal:
+    #         set_type = SetType.AMSAP
+    #         set_aantal = int(_set_aantal.replace("+", ""))
+    #     else:
+    #         set_type = SetType.AANTAL
+    #         set_aantal = int(_set_aantal)
         
-        return set_type, set_aantal
+    #     return set_type, set_aantal
     
-    @staticmethod
-    def repetities_uit_setcode(setcode: str) -> Tuple[RepetitieType, int]:
+    # @staticmethod
+    # def repetities_uit_setcode(setcode: str) -> Tuple[RepetitieType, int]:
         
-        if "x" in setcode:
-            _repetitie_aantal = setcode.split("x")[1].split("@")[0]
-        else:
-            _repetitie_aantal = setcode.split("@")[0]
+    #     if "x" in setcode:
+    #         _repetitie_aantal = setcode.split("x")[1].split("@")[0]
+    #     else:
+    #         _repetitie_aantal = setcode.split("@")[0]
         
-        if "?" in _repetitie_aantal:
-            repetitie_type = RepetitieType.VRIJ
-            repetitie_aantal = 0
-        elif "-" in _repetitie_aantal and "+" in _repetitie_aantal:
-            repetitie_type = RepetitieType.BEREIK_AMRAP
-            repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1].replace("+", "")))
-        elif "-" in _repetitie_aantal:
-            repetitie_type = RepetitieType.BEREIK
-            repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1]))
-        elif "+" in _repetitie_aantal:
-            repetitie_type = RepetitieType.AMRAP
-            repetitie_aantal = int(_repetitie_aantal.replace("+", ""))
-        else:
-            repetitie_type = RepetitieType.AANTAL
-            repetitie_aantal = int(_repetitie_aantal)
+    #     if "?" in _repetitie_aantal:
+    #         repetitie_type = RepetitieType.VRIJ
+    #         repetitie_aantal = 0
+    #     elif "-" in _repetitie_aantal and "+" in _repetitie_aantal:
+    #         repetitie_type = RepetitieType.BEREIK_AMRAP
+    #         repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1].replace("+", "")))
+    #     elif "-" in _repetitie_aantal:
+    #         repetitie_type = RepetitieType.BEREIK
+    #         repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1]))
+    #     elif "+" in _repetitie_aantal:
+    #         repetitie_type = RepetitieType.AMRAP
+    #         repetitie_aantal = int(_repetitie_aantal.replace("+", ""))
+    #     else:
+    #         repetitie_type = RepetitieType.AANTAL
+    #         repetitie_aantal = int(_repetitie_aantal)
         
-        return repetitie_type, repetitie_aantal
+    #     return repetitie_type, repetitie_aantal
     
-    @staticmethod
-    def gewicht_uit_setcode(setcode: str, trainingsgewichten, oefening) -> Tuple[GewichtType, int]:
+    # @staticmethod
+    # def gewicht_uit_setcode(setcode: str, trainingsgewichten, oefening) -> Tuple[GewichtType, int]:
         
-        if "@" in setcode:
-            _gewicht_aantal = setcode.split("@")[1]
-        else:
-            _gewicht_aantal = ""
+    #     if "@" in setcode:
+    #         _gewicht_aantal = setcode.split("@")[1]
+    #     else:
+    #         _gewicht_aantal = ""
         
-        if "?" in _gewicht_aantal:
-            gewicht_type = GewichtType.VRIJ
-            gewicht = 0.0
-        elif "%" in _gewicht_aantal:
-            gewicht_type = GewichtType.PERCENTAGE
-            trainingsgewicht = next(trainingsgewicht_dict["trainingsgewicht"] for trainingsgewicht_dict in trainingsgewichten if trainingsgewicht_dict["oefening"] == oefening)
-            gewicht = int(_gewicht_aantal.replace("%", "")) / 100 * trainingsgewicht
-        elif _gewicht_aantal == "":
-            gewicht_type = GewichtType.GEWICHTLOOS
-            gewicht = None
-        else:
-            gewicht_type = GewichtType.GEWICHT
-            gewicht = int(_gewicht_aantal)
+    #     if "?" in _gewicht_aantal:
+    #         gewicht_type = GewichtType.VRIJ
+    #         gewicht = 0.0
+    #     elif "%" in _gewicht_aantal:
+    #         gewicht_type = GewichtType.PERCENTAGE
+    #         trainingsgewicht = next(trainingsgewicht_dict["trainingsgewicht"] for trainingsgewicht_dict in trainingsgewichten if trainingsgewicht_dict["oefening"] == oefening)
+    #         gewicht = int(_gewicht_aantal.replace("%", "")) / 100 * trainingsgewicht
+    #     elif _gewicht_aantal == "":
+    #         gewicht_type = GewichtType.GEWICHTLOOS
+    #         gewicht = None
+    #     else:
+    #         gewicht_type = GewichtType.GEWICHT
+    #         gewicht = int(_gewicht_aantal)
         
-        return gewicht_type, gewicht
+    #     return gewicht_type, gewicht
         
     def paneel(
         self,
@@ -152,7 +153,7 @@ class SessieSet:
             max_repetities = self.repetitie_aantal[1]
             aantal_repetities = self.repetitie_aantal[1]
         else:
-            max_repetities = REPETITIES_MAX
+            max_repetities = REPETITIE_AANTAL_MAX
             if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
                 aantal_repetities = self.repetitie_aantal[1]
             else:
@@ -453,13 +454,13 @@ class SessieOefening:
         kolom,
         ):
         
-        titel = kolom.empty()
+        titel = kolom.container()
         if not self.hoofdoefening:
             self.recent_resultaat(kolom)
         
         for sessie_setgroep, sessie_sets in self.sets.items():
             if self.hoofdoefening:
-                kolom.write(sessie_setgroep)
+                kolom.markdown(sessie_setgroep)
             
             for sessie_set in sessie_sets:
                 sessie_set.paneel(kolom)
@@ -467,7 +468,8 @@ class SessieOefening:
             if sessie_setgroep in self.setknoppen:
                 self.setknoppen[sessie_setgroep].paneel(kolom)
         
-        titel.write(f":primary[{self.titel}]")
+        for regel in self.titel.split("\n"):
+            titel.markdown(f":primary[{regel}]")
     
     def recent_resultaat(
         self,
@@ -481,9 +483,9 @@ class SessieOefening:
             label = f"recente resultaten {self.oefening.naam}",
             )
         if st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"]:
-            expander.dataframe(
+            expander.table(
                 data = st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"],
-                hide_index = True,
+                # hide_index = True,
                 )
         else:
             expander.markdown("deze oefening is nog niet uitgevoerd")
