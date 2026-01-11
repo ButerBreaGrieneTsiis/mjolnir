@@ -63,13 +63,18 @@ class Subregister(dict):
     def lijst(self) -> List[GeregistreerdObject]:
         return list(self.values())
     
-    def nieuw(self):
+    def nieuw(
+        self,
+        geef_uuid: bool = True,
+        ):
         
         print(f"maak een nieuw {self.type.__name__.lower()}")
         
         basis_type = self.type.nieuw({sleutel: veld for sleutel, veld in self.type.__annotations__.items() if sleutel not in self.type.__dict__})
         
-        return basis_type.uuid
+        if geef_uuid:
+            return basis_type.uuid
+        return basis_type
     
     def verwijderen(self):
         
