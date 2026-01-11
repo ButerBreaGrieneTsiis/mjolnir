@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Dict, Tuple
 
 from grienetsiis import Decoder, Encoder
@@ -287,13 +286,3 @@ Register.ENCODERS.append(Encoder(
     class_naam = "Setcode",
     encoder_functie = "naar_json",
     ))
-
-setcode = Setcode()
-print(setcode.tekst)
-setcode.gewicht_type = GewichtType.GEWICHT
-print(setcode.tekst)
-setcode.gewicht_aantal = 150
-print(setcode.tekst)
-setcode.gewicht_type = GewichtType.PERCENTAGE
-print(setcode.tekst)
-setcode.gewicht_aantal = 150
