@@ -2,10 +2,10 @@ from __future__ import annotations
 import datetime as dt
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
-from grienetsiis import openen_json, opslaan_json, invoer_validatie, invoer_kiezen
+from grienetsiis import openen_json, opslaan_json, invoer_validatie, invoer_kiezen, Decoder, Encoder
 
 from mjolnir.enums import ENUMS
 
@@ -107,16 +107,19 @@ class Register(dict, metaclass = Singleton):
     BESTANDSMAP: Path = Path("gegevens")
     EXTENSIE: str = "json"
     
-    DECODERS: Dict[str, Callable] = {}
-    ENCODERS: Dict[str, Callable] = {}
+    TYPES: Dict[str, Dict[str, Any]] = {}
+    DECODERS: List[Decoder] = []
+    ENCODERS: List[Encoder] = []
     ENUMS: Dict[str, Enum] = ENUMS
     
     def __getattr__(self, naam):
-        if naam in self:
-            return self[naam]
-        else:
-            self[naam] = Subregister(type = self.DECODERS[naam]["class"])
-            return self[naam]
+        
+        if naam not in self.TYPES:
+            raise ValueError(f"onbekend type {naam}")
+        
+        if naam not in self:
+            self[naam] = Subregister(type = self.TYPES[naam])
+        return self[naam]
     
     @classmethod
     def openen(cls):
@@ -128,26 +131,25 @@ class Register(dict, metaclass = Singleton):
         
         GeregistreerdObjectMeta.NIEUW = False
         
-        for class_naam, class_dict in cls.DECODERS.items():
+        for class_naam, class_dict in cls.TYPES.items():
             
             bestandspad = cls.BESTANDSMAP / f"{class_naam}.{cls.EXTENSIE}"
             
-            if not bestandspad.is_file():
-                continue
+            subregister = Subregister(class_dict["type"])
             
-            geregistreerde_objecten = openen_json(
-                bestandspad = bestandspad,
-                decoder_functie = class_dict["decoder_functie"],
-                # decoder_lijst = cls.DECODER_LIJST,
-                enum_dict = ENUMS,
-                )
-            
-            subregister = Subregister(class_dict["class"])
-            
-            for uuid, geregistreerd_object in geregistreerde_objecten.items():
+            if bestandspad.is_file():
                 
-                geregistreerd_object.uuid = uuid
-                subregister[uuid] = geregistreerd_object
+                geregistreerde_objecten = openen_json(
+                    bestandspad = bestandspad,
+                    decoder_object = class_dict["decoder"],
+                    decoder_subobjecten = cls.DECODERS,
+                    enum_dict = ENUMS,
+                    )
+                
+                for uuid, geregistreerd_object in geregistreerde_objecten.items():
+                    
+                    geregistreerd_object.uuid = uuid
+                    subregister[uuid] = geregistreerd_object
             
             register[class_naam] = subregister
         
@@ -157,15 +159,15 @@ class Register(dict, metaclass = Singleton):
     
     def opslaan(self) -> None:
         
-        for class_naam, class_dict in Register.ENCODERS.items():
+        for class_naam, class_dict in self.TYPES.items():
             
             bestandspad = self.BESTANDSMAP / f"{class_naam}.{self.EXTENSIE}"
             
             opslaan_json(
                 self[class_naam],
                 bestandspad,
-                encoder_functie = class_dict["encoder_functie"],
-                # encoder_dict = self.ENCODER_DICT,
+                encoder_object = class_dict["encoder"],
+                encoder_subobjecten = self.ENCODERS,
                 enum_dict = ENUMS,
                 )
 
