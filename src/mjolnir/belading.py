@@ -183,7 +183,7 @@ Register.TYPES["halterstangen"] = {
     "decoder": Halterstang.van_json,
     "encoder": Halterstang.naar_json,
     }
-Register.TYPES["halterstangen"] = {
+Register.TYPES["halterschijven"] = {
     "type": Halterschijf,
     "decoder": Halterschijf.van_json,
     "encoder": Halterschijf.naar_json,
