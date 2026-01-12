@@ -118,12 +118,23 @@ class ResultaatOefening:
             "sets": self.sets,
             }
     
-    # @property
-    # def tekst(self) -> str:
-    #     if 
-    #     # indien allemaal gelijk gewicht -> (rep_1, rep_2)@gewicht
-    #     # indien allemaal gelijk rep -> #sets×reps@(gewicht_1, gewicht_2)
-    #     # indien beide gelijk -> #sets×reps@gewicht
+    @property
+    def tekst(self) -> str:
+        
+        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)) == 1 and len(set(resultaat_set.repetities for resultaat_set in self.sets)):
+            if self.sets[0].gewicht is not None:
+                return f"{len(self.sets)}x{self.sets[0].repetities}@{self.sets[0].gewicht}"
+            return f"{len(self.sets)}x{self.sets[0].repetities}"
+        
+        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)):
+            if self.sets[0].gewicht is not None:
+                return "(" + ", ".join(f"{resultaat_set.repetities}" for resultaat_set in self.sets) + f")@{self.sets[0].gewicht}"
+            return  ", ".join(f"{resultaat_set.repetities}" for resultaat_set in self.sets)
+        
+        if len(set(resultaat_set.repetities for resultaat_set in self.sets)):
+            return f"{len(self.sets)}x{self.sets[0].repetities}@(" + ", ".join(f"{resultaat_set.gewicht}" for resultaat_set in self.sets) + ")"
+        
+        return ", ".join(resultaat_set.tekst for resultaat_set in self.sets)
     
     @property
     def volume(self) -> float | None:
@@ -182,7 +193,7 @@ class ResultaatOefening:
         for resultaat in resultaten:
             resultaten_dict["datum"].append(resultaat["datum"].strftime("%a %d %b %Y"))
             resultaten_dict["#sets"].append(len(resultaat["resultaat_oefening"].sets))
-            resultaten_dict["sets"].append(", ".join(resultaat_set.tekst for resultaat_set in resultaat["resultaat_oefening"].sets))
+            resultaten_dict["sets"].append(resultaat["resultaat_oefening"].tekst)
             resultaten_dict["volume"].append(resultaat["resultaat_oefening"].volume)
             resultaten_dict["e1rm"].append(resultaat["resultaat_oefening"].e1rm)
             resultaten_dict["schema"].append(resultaat["schema"])
