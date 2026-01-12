@@ -177,14 +177,3 @@ class Halter:
         return self.halterstang.massa + \
             sum([halterschijf.massa for halterschijf in self.halterschijven_links]) + \
             sum([halterschijf.massa for halterschijf in self.halterschijven_rechts])
-
-Register.TYPES["halterstangen"] = {
-    "type": Halterstang,
-    "decoder": Halterstang.van_json,
-    "encoder": Halterstang.naar_json,
-    }
-Register.TYPES["halterschijven"] = {
-    "type": Halterschijf,
-    "decoder": Halterschijf.van_json,
-    "encoder": Halterschijf.naar_json,
-    }

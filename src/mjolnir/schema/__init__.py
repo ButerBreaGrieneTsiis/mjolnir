@@ -1,5 +1,5 @@
-from .sjabloon import Sjabloon
 from .schema import Schema
+from .sjabloon import Sjabloon
 
 
 __all__ = [

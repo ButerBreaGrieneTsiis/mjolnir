@@ -24,123 +24,48 @@ class SessieSet:
     
     setcode: Setcode
     
-    oefening: Oefening
     set_nummer: int
+    oefening: Oefening
     
-    set_type: SetType
-    
-    repetitie_type: RepetitieType
-    repetitie_aantal: int | Tuple[int, int]
-    
-    gewicht_type: GewichtType
-    gewicht: float | None
+    trainingsgewicht: float | None = None
     halter: Halter | None = None
     
     afgerond: bool = False
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
     
-    @classmethod
-    def van_setcode(
-        cls,
-        setcode: Setcode,
-        set_nummer: int,
-        oefening: Oefening,
-        trainingsgewichten,
-        ) -> "SessieSet":
-        
-        set_type, _ = cls.sets_uit_setcode(setcode)
-        repetitie_type, repetitie_aantal = cls.repetities_uit_setcode(setcode)
-        gewicht_type, gewicht = cls.gewicht_uit_setcode(setcode, trainingsgewichten, oefening)
-        
-        return cls(
-            setcode = setcode,
-            oefening = oefening,
-            set_nummer = set_nummer,
-            set_type = set_type,
-            repetitie_type = repetitie_type,
-            repetitie_aantal = repetitie_aantal,
-            gewicht_type = gewicht_type,
-            gewicht = gewicht,
-            )
+    @property
+    def set_type(self) -> SetType:
+        return self.setcode.set_type
+    
+    @property
+    def set_aantal(self) -> int:
+        return self.setcode.set_aantal
+    
+    @property
+    def repetitie_type(self) -> RepetitieType:
+        return self.setcode.repetitie_type
+    
+    @property
+    def repetitie_aantal(self) -> int:
+        return self.setcode.repetitie_aantal
+    
+    @property
+    def repetitie_maximaal(self) -> int:
+        return self.setcode.repetitie_maximaal
+    
+    @property
+    def gewicht_type(self) -> GewichtType:
+        return self.setcode.gewicht_type
+    
+    @property
+    def gewicht_aantal(self) -> int | None:
+        return self.setcode.gewicht_aantal
     
     @property
     def repetitie_tekst(self) -> str:
-        if "x" in self.setcode:
-            return self.setcode.split("x")[1].split("@")[0]
-        else:
-            return self.setcode.split("@")[0]
+        return self.setcode.repetitie_tekst
     
-    # @staticmethod
-    # def sets_uit_setcode(setcode: str) -> Tuple[SetType, int]:
-        
-    #     if "x" in setcode:
-    #         _set_aantal = setcode.split("x")[0]
-    #     else:
-    #         _set_aantal = "1"
-        
-    #     if "?" in _set_aantal:
-    #         set_type = SetType.VRIJ
-    #         set_aantal = 0
-    #     elif "+" in _set_aantal:
-    #         set_type = SetType.AMSAP
-    #         set_aantal = int(_set_aantal.replace("+", ""))
-    #     else:
-    #         set_type = SetType.AANTAL
-    #         set_aantal = int(_set_aantal)
-        
-    #     return set_type, set_aantal
-    
-    # @staticmethod
-    # def repetities_uit_setcode(setcode: str) -> Tuple[RepetitieType, int]:
-        
-    #     if "x" in setcode:
-    #         _repetitie_aantal = setcode.split("x")[1].split("@")[0]
-    #     else:
-    #         _repetitie_aantal = setcode.split("@")[0]
-        
-    #     if "?" in _repetitie_aantal:
-    #         repetitie_type = RepetitieType.VRIJ
-    #         repetitie_aantal = 0
-    #     elif "-" in _repetitie_aantal and "+" in _repetitie_aantal:
-    #         repetitie_type = RepetitieType.BEREIK_AMRAP
-    #         repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1].replace("+", "")))
-    #     elif "-" in _repetitie_aantal:
-    #         repetitie_type = RepetitieType.BEREIK
-    #         repetitie_aantal = (int(_repetitie_aantal.split("-")[0]), int(_repetitie_aantal.split("-")[1]))
-    #     elif "+" in _repetitie_aantal:
-    #         repetitie_type = RepetitieType.AMRAP
-    #         repetitie_aantal = int(_repetitie_aantal.replace("+", ""))
-    #     else:
-    #         repetitie_type = RepetitieType.AANTAL
-    #         repetitie_aantal = int(_repetitie_aantal)
-        
-    #     return repetitie_type, repetitie_aantal
-    
-    # @staticmethod
-    # def gewicht_uit_setcode(setcode: str, trainingsgewichten, oefening) -> Tuple[GewichtType, int]:
-        
-    #     if "@" in setcode:
-    #         _gewicht_aantal = setcode.split("@")[1]
-    #     else:
-    #         _gewicht_aantal = ""
-        
-    #     if "?" in _gewicht_aantal:
-    #         gewicht_type = GewichtType.VRIJ
-    #         gewicht = 0.0
-    #     elif "%" in _gewicht_aantal:
-    #         gewicht_type = GewichtType.PERCENTAGE
-    #         trainingsgewicht = next(trainingsgewicht_dict["trainingsgewicht"] for trainingsgewicht_dict in trainingsgewichten if trainingsgewicht_dict["oefening"] == oefening)
-    #         gewicht = int(_gewicht_aantal.replace("%", "")) / 100 * trainingsgewicht
-    #     elif _gewicht_aantal == "":
-    #         gewicht_type = GewichtType.GEWICHTLOOS
-    #         gewicht = None
-    #     else:
-    #         gewicht_type = GewichtType.GEWICHT
-    #         gewicht = int(_gewicht_aantal)
-        
-    #     return gewicht_type, gewicht
-        
     def paneel(
         self,
         kolom,
@@ -161,8 +86,8 @@ class SessieSet:
         
         if self.gewicht_type == GewichtType.PERCENTAGE:
             hoeveelheid_gewicht = self.halter.massa
-        elif self.gewicht == GewichtType.GEWICHT or self.gewicht == GewichtType.VRIJ:
-            hoeveelheid_gewicht = self.gewicht
+        elif self.gewicht_type in (GewichtType.GEWICHT, GewichtType.VRIJ):
+            hoeveelheid_gewicht = self.gewicht_aantal
         else:
             hoeveelheid_gewicht = 0.0
         
@@ -191,8 +116,7 @@ class SessieSet:
                     )
                 st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = self.halter.massa
             else:
-                self.gewicht = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
-                st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = self.gewicht
+                st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
         
         if st.session_state.get(f"knop_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
@@ -225,7 +149,7 @@ class SessieSet:
             if self.oefening.halter_type is not None:
                 kolom_gewicht.markdown(f"{f"{self.halter.massa}".replace(".", ",")} kg")
             else:
-                kolom_gewicht.markdown(f"{f"{self.gewicht}".replace(".", ",")} kg")
+                kolom_gewicht.markdown(f"{f"{st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"]}".replace(".", ",")} kg")
         
         if self.oefening.halter_type is not None:
             kolom_halter.markdown("**halter**")
@@ -334,7 +258,7 @@ class SessieOefening:
             
             for sessie_setgroep in self.sets.values():
                 for sessie_set in sessie_setgroep:
-                    gewichten.append(sessie_set.gewicht)
+                    gewichten.append(sessie_set.gewicht_aantal)
             
             halters = halterstang.optimaal_laden(
                 gewicht_per_set = gewichten,
@@ -370,7 +294,9 @@ class SessieOefening:
         trainingsgewichten: List[Dict[str, Any]],
         ):
         
-        sets = {}
+        trainingsgewicht = next((trainingsgewicht_dict["trainingsgewicht"] for trainingsgewicht_dict in trainingsgewichten if trainingsgewicht_dict["oefening"] == oefening), None)
+        
+        sessie_sets = {}
         
         set_nummer = 0
         
@@ -379,47 +305,46 @@ class SessieOefening:
             sjabloon = Register().sjablonen[sjabloon_uuid]
             
             if sjabloon.weken == 0:
-                setcodes = sjabloon.sets["week 0"]
+                setcodes = sjabloon.setcodes["week 0"]
             else:
-                setcodes = sjabloon.sets[f"week {week}"]
+                setcodes = sjabloon.setcodes[f"week {week}"]
             
             for setcode in setcodes:
                 
-                set_type, set_aantal = SessieSet.sets_uit_setcode(setcode)
+                set_type = setcode.set_type
+                set_aantal = setcode.set_aantal
                 
-                if sjabloon.setgroep_type.value not in sets:
-                    sets[sjabloon.setgroep_type.value] = []
+                if sjabloon.setgroep_type.value not in sessie_sets:
+                    sessie_sets[sjabloon.setgroep_type.value] = []
                 
                 if set_type == SetType.AANTAL or set_type == SetType.AMSAP:
                     for _ in range(set_aantal):
                     
                         set_nummer += 1
                         
-                        set = SessieSet.van_setcode(
+                        sessie_set = SessieSet(
                             setcode = setcode,
                             set_nummer = set_nummer,
                             oefening = oefening,
-                            trainingsgewichten = trainingsgewichten,
+                            trainingsgewicht = trainingsgewicht,
                             )
                         
-                        sets[sjabloon.setgroep_type.value].append(set)
+                        sessie_sets[sjabloon.setgroep_type.value].append(sessie_set)
                 else:
                     set_nummer += 1
                     
-                    set = SessieSet.van_setcode(
+                    sessie_set = SessieSet(
                         setcode = setcode,
                         set_nummer = set_nummer,
                         oefening = oefening,
-                        trainingsgewichten = trainingsgewichten,
+                        trainingsgewicht = trainingsgewicht,
                         )
                     
-                    sets[sjabloon.setgroep_type.value].append(set)
-        
-        trainingsgewicht = next((trainingsgewicht_dict["trainingsgewicht"] for trainingsgewicht_dict in trainingsgewichten if trainingsgewicht_dict["oefening"] == oefening), None)
+                    sessie_sets[sjabloon.setgroep_type.value].append(sessie_set)
         
         return cls(
             oefening = oefening,
-            sets = sets,
+            sets = sessie_sets,
             trainingsgewicht = trainingsgewicht,
             )
     
@@ -446,8 +371,8 @@ class SessieOefening:
             return f"{self.oefening.naam.upper()}"
         
         if self.trainingsgewicht is None:
-            return f"{self.oefening.naam.upper()}\n - volume: {self.volume:.1f} kg\n - e1rm: {self.e1rm:.1f} kg"
-        return f"{self.oefening.naam.upper()}\n - TM: {self.trainingsgewicht:.1f} kg\n - volume: {self.volume:.1f} kg\n - e1rm: {self.e1rm:.1f} kg"
+            return f"{self.oefening.naam.upper()} (volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
+        return f"{self.oefening.naam.upper()} (TM: {self.trainingsgewicht:.1f} kg, volume: {self.volume:.1f} kg, e1rm: {self.e1rm:.1f} kg)"
     
     def paneel(
         self,

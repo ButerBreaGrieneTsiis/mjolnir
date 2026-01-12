@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar, Dict, List
 
-from mjolnir.basis import Register, GeregistreerdObject, Setcode
+from mjolnir.basis import GeregistreerdObject, Setcode
 from mjolnir.basis.constantes import *
 from mjolnir.basis.enums import RepetitieType, GewichtType, SetType, SetGroepType
 
@@ -145,9 +145,3 @@ class Sjabloon(GeregistreerdObject):
         sjabloon.setcodes = setcodes_per_week
         
         return sjabloon
-
-Register.TYPES["sjablonen"] = {
-    "type": Sjabloon,
-    "decoder": Sjabloon.van_json,
-    "encoder": Sjabloon.naar_json,
-    }

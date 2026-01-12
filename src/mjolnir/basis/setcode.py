@@ -1,10 +1,7 @@
 from typing import Dict, Tuple
 
-from grienetsiis import Decoder, Encoder
-
 from .constantes import *
 from .enums import GewichtType, RepetitieType, SetType
-from .register import Register
 
 
 class Setcode:
@@ -277,12 +274,21 @@ class Setcode:
             self._gewicht_aantal = None
         elif waarde == GewichtType.VRIJ:
             self._gewicht_aantal = 0.0
-
-Register.DECODERS.append(Decoder(
-    decoder_functie = Setcode.van_json,
-    velden = frozenset(("__setcode__",)),
-    ))
-Register.ENCODERS.append(Encoder(
-    class_naam = "Setcode",
-    encoder_functie = "naar_json",
-    ))
+    
+    @property
+    def set_tekst(self) -> str:
+        if "x" in self.tekst:
+            return self.tekst.split("x")[0]
+        return ""
+    
+    @property
+    def repetitie_tekst(self) -> str:
+        if "x" in self.tekst:
+            return self.tekst.split("x")[1].split("@")[0]
+        return self.tekst.split("@")[0]
+    
+    @property
+    def gewicht_tekst(self) -> str:
+        if "@" in self.tekst:
+            return self.tekst.split("@")[1]
+        return ""

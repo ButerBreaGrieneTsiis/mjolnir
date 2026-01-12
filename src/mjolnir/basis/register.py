@@ -118,7 +118,6 @@ class Register(dict, metaclass = Singleton):
     ENUMS: Dict[str, Enum] = ENUMS
     
     def __getattr__(self, naam):
-        print(self.TYPES)
         if naam not in self.TYPES:
             raise ValueError(f"onbekend type {naam}")
         

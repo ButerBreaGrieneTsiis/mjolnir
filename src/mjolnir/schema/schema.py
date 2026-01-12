@@ -5,7 +5,7 @@ from typing import ClassVar, Dict, List
 from mjolnir.basis import Register, GeregistreerdObject
 from mjolnir.basis.constantes import *
 from mjolnir.basis.enums import OefeningType, GewichtType, Oefening, Status, SetGroepType
-from mjolnir.schema import Sjabloon
+from mjolnir.schema.sjabloon import Sjabloon
 
 from grienetsiis import invoer_validatie, invoer_kiezen
 
@@ -144,9 +144,3 @@ class Schema(GeregistreerdObject):
             schema.status = Status.HUIDIG
         
         return schema
-
-Register.TYPES["schema"] = {
-    "type": Schema,
-    "decoder": Schema.van_json,
-    "encoder": Schema.naar_json,
-    }

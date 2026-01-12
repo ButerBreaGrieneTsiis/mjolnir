@@ -267,7 +267,7 @@ class Resultaat:
         ) -> "Resultaat":
             return openen_json(
                 bestandspad = bestandspad,
-                decoder_lijst = [
+                decoder_subobjecten = [
                     Resultaat.DECODER,
                     ResultaatOefening.DECODER,
                     ResultaatSet.DECODER,
