@@ -5,14 +5,14 @@ import keyboard
 import locale
 import os
 import psutil
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import streamlit as st
 
 
 from mjolnir.basis import Register, Setcode
 from mjolnir.basis.constantes import *
-from mjolnir.basis.enums import Oefening, GewichtType, RepetitieType, SetType, SetGroepType, Status
+from mjolnir.basis.enums import Oefening, GewichtType, HalterType, RepetitieType, SetType, SetGroepType, Status
 from mjolnir.sessie import Halter
 from mjolnir.resultaat import ResultaatOefening, Resultaat
 
@@ -162,10 +162,12 @@ class SessieSet:
                 border = False,
                 )
             
+            max_value = int(GEWICHT_AANTAL_MAX) if self.oefening.halter_type == HalterType.BARBELL else 50
+            
             formulier_gewicht.slider(
                 label = "gewicht",
                 min_value = 0,
-                max_value = 100,
+                max_value = max_value,
                 key = f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}",
                 )
             
