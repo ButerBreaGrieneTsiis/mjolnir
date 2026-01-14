@@ -7,7 +7,7 @@ from typing import Any, Callable, ClassVar, Dict, List, TYPE_CHECKING
 from grienetsiis import Decoder, Encoder, opslaan_json, openen_json, decimaal_getal
 
 from mjolnir.basis import Register
-from mjolnir.basis.enums import Oefening, GewichtType, ENUMS
+from mjolnir.basis.enums import Oefening, GewichtType, Status, ENUMS
 
 
 if TYPE_CHECKING:
@@ -98,8 +98,9 @@ class ResultaatOefening:
         
         for sessie_setgroep in sessie_oefening.sets.values():
             for sessie_set in sessie_setgroep:
-                resultaat_set = ResultaatSet.van_sessie(sessie_set)
-                sets.append(resultaat_set)
+                if sessie_set.status == Status.AFGEROND and sessie_set.repetitie_gedaan > 0:
+                    resultaat_set = ResultaatSet.van_sessie(sessie_set)
+                    sets.append(resultaat_set)
         
         return cls(
             oefening = sessie_oefening.oefening,
@@ -228,8 +229,9 @@ class Resultaat:
         oefeningen = []
         
         for sessie_oefening in sessie.oefeningen:
-            resultaat_oefening = ResultaatOefening.van_sessie(sessie_oefening)
-            oefeningen.append(resultaat_oefening)
+            if any(sessie_set.status == Status.AFGEROND and sessie_set.repetitie_gedaan > 0 for sessie_setgroep in sessie_oefening.sets.values() for sessie_set in sessie_setgroep):
+                resultaat_oefening = ResultaatOefening.van_sessie(sessie_oefening)
+                oefeningen.append(resultaat_oefening)
         
         return cls(
             schema_uuid = sessie.schema_uuid,
