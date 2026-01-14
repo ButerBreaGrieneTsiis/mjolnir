@@ -203,9 +203,6 @@ class GeregistreerdObject(metaclass = GeregistreerdObjectMeta):
         **dict,
         ) -> GeregistreerdObject:
         
-        if "datum" in dict:
-            dict["datum"] = dt.datetime.strptime(dict["datum"], "%Y-%m-%d").date()
-        
         return cls(**dict)
     
     def naar_json(self):
@@ -229,8 +226,6 @@ class GeregistreerdObject(metaclass = GeregistreerdObjectMeta):
                 continue
             elif veld_sleutel == "uuid":
                 continue
-            elif isinstance(veld_waarde, dt.date):
-                dict_naar_json[veld_sleutel] = veld_waarde.strftime("%Y-%m-%d")
             else:
                 dict_naar_json[veld_sleutel] = veld_waarde
         
