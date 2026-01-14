@@ -3,6 +3,7 @@ from grienetsiis import Decoder, Encoder
 from mjolnir.basis import Register, Setcode
 from mjolnir.schema import Schema, Sjabloon
 from mjolnir.sessie import Halterstang, Halterschijf, paneel
+from mjolnir.resultaat import Resultaat, ResultaatSet, ResultaatOefening
 
 
 __all__ = [
@@ -34,7 +35,9 @@ Register.TYPES["sjablonen"] = {
     }
 Register.DECODERS.append(Decoder(
     decoder_functie = Setcode.van_json,
-    velden = frozenset(("__setcode__",)),
+    velden = frozenset((
+        "__setcode__",
+        )),
     ))
 Register.ENCODERS.append(Encoder(
     class_naam = "Setcode",
