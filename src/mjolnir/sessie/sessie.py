@@ -73,6 +73,18 @@ class SessieSet:
     def gewicht_tekst(self) -> str:
         return self.setcode.gewicht_tekst
     
+    @property
+    def volume(self) -> float | None:
+        if self.oefening.gewichtloos:
+            return None
+        return self.gewicht_gedaan * self.repetitie_gedaan
+    
+    @property
+    def e1rm(self) -> float | None:
+        if self.oefening.gewichtloos:
+            return None
+        return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
+    
     def paneel(
         self,
         kolom,
@@ -125,12 +137,19 @@ class SessieSet:
             else:
                 st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
         
-        if st.session_state.get(f"knop_{self.oefening.naam_underscore}_{self.set_nummer}", False):
+        if st.session_state.get(f"knop_afronden_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
             self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"]
             self.gewicht_gedaan = st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"]
             
             self.status = Status.AFGEROND
+            
+            st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = False
+            st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = True
+        
+        if st.session_state.get(f"knop_afbreken_{self.oefening.naam_underscore}_{self.set_nummer}", False):
+            
+            self.status = Status.AFGEBROKEN
             
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = False
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = True
@@ -206,24 +225,19 @@ class SessieSet:
             key = f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
-        formulier.form_submit_button(
+        formulier_knop_afronden, formulier_knop_afbreken, _ = formulier.columns([0.2, 0.2, 0.6])
+        
+        formulier_knop_afronden.form_submit_button(
             label = "afronden",
-            key = f"knop_{self.oefening.naam_underscore}_{self.set_nummer}",
+            key = f"knop_afronden_{self.oefening.naam_underscore}_{self.set_nummer}",
+            )
+        
+        formulier_knop_afbreken.form_submit_button(
+            label = "afbreken",
+            key = f"knop_afbreken_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
         return expander
-    
-    @property
-    def volume(self) -> float | None:
-        if self.oefening.gewichtloos:
-            return None
-        return self.gewicht_gedaan * self.repetitie_gedaan
-    
-    @property
-    def e1rm(self) -> float | None:
-        if self.oefening.gewichtloos:
-            return None
-        return self.gewicht_gedaan * (1 + self.repetitie_gedaan/30)
 
 @dataclass
 class SetKnop:
@@ -556,7 +570,7 @@ class Sessie:
         if "opslaan_uitgeschakeld" not in st.session_state:
             st.session_state["opslaan_uitgeschakeld"] = True
         else:
-            st.session_state["opslaan_uitgeschakeld"] = not all(sessie_set.status == Status.AFGEROND for oefening in self.oefeningen for sessie_setgroep in oefening.sets.values() for sessie_set in sessie_setgroep)
+            st.session_state["opslaan_uitgeschakeld"] = not all(sessie_set.status in (Status.AFGEROND, Status.AFGEBROKEN) for oefening in self.oefeningen for sessie_setgroep in oefening.sets.values() for sessie_set in sessie_setgroep)
         
         # if "volledig_scherm" not in st.session_state:
         #     st.session_state["volledig_scherm"] = True
