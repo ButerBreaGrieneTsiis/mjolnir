@@ -2,9 +2,9 @@ from dataclasses import dataclass
 import datetime as dt
 from pathlib import Path
 import re
-from typing import Any, ClassVar, Dict, List, TYPE_CHECKING
+from typing import Any, Callable, ClassVar, Dict, List, TYPE_CHECKING
 
-from grienetsiis import Decoder, opslaan_json, openen_json
+from grienetsiis import Decoder, Encoder, opslaan_json, openen_json, decimaal_getal
 
 from mjolnir.basis import Register
 from mjolnir.basis.enums import Oefening, GewichtType, ENUMS
@@ -20,6 +20,7 @@ class ResultaatSet:
     gewicht: float | None = None
     
     DECODER: ClassVar[Decoder | None] = None
+    ENCODER: ClassVar[Encoder | None] = None
     
     @classmethod
     def van_sessie(
@@ -85,6 +86,7 @@ class ResultaatOefening:
     sets: List[ResultaatSet]
     
     DECODER: ClassVar[Decoder | None] = None
+    ENCODER: ClassVar[Encoder | None] = None
     
     @classmethod
     def van_sessie(
@@ -181,28 +183,27 @@ class ResultaatOefening:
         
         resultaten_dict = {
             "datum": [],
-            r"#sets": [],
+            "#sets": [],
             "sets": [],
-            "volume": [],
-            "e1rm": [],
             "schema": [],
             "week": [],
             "dag": [],
             }
         
+        if not oefening.gewichtloos:
+            resultaten_dict["volume"] = []
+            resultaten_dict["e1rm"] = []
+        
         for resultaat in resultaten:
             resultaten_dict["datum"].append(resultaat["datum"].strftime("%a %d %b %Y"))
             resultaten_dict["#sets"].append(len(resultaat["resultaat_oefening"].sets))
             resultaten_dict["sets"].append(resultaat["resultaat_oefening"].tekst)
-            resultaten_dict["volume"].append(resultaat["resultaat_oefening"].volume)
-            resultaten_dict["e1rm"].append(resultaat["resultaat_oefening"].e1rm)
+            if not oefening.gewichtloos:
+                resultaten_dict["volume"].append(decimaal_getal(resultaat["resultaat_oefening"].volume))
+                resultaten_dict["e1rm"].append(decimaal_getal(resultaat["resultaat_oefening"].e1rm))
             resultaten_dict["schema"].append(resultaat["schema"])
             resultaten_dict["week"].append(resultaat["week"])
             resultaten_dict["dag"].append(resultaat["dag"])
-        
-        if oefening.gewichtloos:
-            del resultaten_dict["volume"]
-            del resultaten_dict["e1rm"]
         
         return resultaten_dict
     
@@ -237,7 +238,8 @@ class Resultaat:
     datum: dt.date
     oefeningen: List[ResultaatOefening]
     
-    DECODER: ClassVar[Decoder | None] = None
+    DECODER_FUNCTIE: ClassVar[Callable | None] = None
+    ENCODER_FUNCTIE: ClassVar[Callable | None] = None
     
     @classmethod
     def van_sessie(
@@ -266,9 +268,6 @@ class Resultaat:
         **dict,
         ) -> "Resultaat":
         
-        if "datum" in dict:
-            dict["datum"] = dt.datetime.strptime(dict["datum"], "%Y-%m-%d").date()
-        
         return cls(**dict)
     
     @classmethod
@@ -276,10 +275,11 @@ class Resultaat:
         cls,
         bestandspad: Path,
         ) -> "Resultaat":
+            
             return openen_json(
                 bestandspad = bestandspad,
+                decoder_object = Resultaat.DECODER_FUNCTIE,
                 decoder_subobjecten = [
-                    Resultaat.DECODER,
                     ResultaatOefening.DECODER,
                     ResultaatSet.DECODER,
                     ],
@@ -290,20 +290,21 @@ class Resultaat:
         opslaan_json(
             object = self,
             bestandspad = self.bestandspad,
-            encoder_dict = {
-                "Resultaat": "naar_json",
-                "ResultaatOefening": "naar_json",
-                "ResultaatSet": "naar_json",
-                },
+            encoder_object = Resultaat.ENCODER_FUNCTIE,
+            encoder_subobjecten = [
+                ResultaatOefening.ENCODER,
+                ResultaatSet.ENCODER,
+                ],
             enum_dict = ENUMS,
             )
     
     def naar_json(self) -> Dict[str, Any]:
+        
         return {
             "schema_uuid": self.schema_uuid,
             "week": self.week,
             "dag": self.dag,
-            "datum": self.datum.strftime("%Y-%m-%d"),
+            "datum": self.datum,
             "oefeningen": self.oefeningen,
             }
     
@@ -318,6 +319,10 @@ ResultaatSet.DECODER = Decoder(
         "gewicht",
         ))
     )
+ResultaatSet.ENCODER = Encoder(
+    class_naam = "ResultaatSet",
+    encoder_functie = "naar_json",
+    )
 ResultaatOefening.DECODER = Decoder(
     decoder_functie = ResultaatOefening.van_json,
     velden = frozenset((
@@ -325,13 +330,9 @@ ResultaatOefening.DECODER = Decoder(
         "sets",
         ))
     )
-Resultaat.DECODER = Decoder(
-    decoder_functie = Resultaat.van_json,
-    velden = frozenset((
-        "schema_uuid",
-        "week",
-        "dag",
-        "datum",
-        "oefeningen",
-        ))
+ResultaatOefening.ENCODER = Encoder(
+    class_naam = "ResultaatOefening",
+    encoder_functie = "naar_json",
     )
+Resultaat.DECODER_FUNCTIE = Resultaat.van_json
+Resultaat.ENCODER_FUNCTIE = Resultaat.naar_json
