@@ -9,7 +9,6 @@ from typing import Any, Dict, List
 
 import streamlit as st
 
-
 from mjolnir.basis import Register, Setcode
 from mjolnir.basis.constantes import *
 from mjolnir.basis.enums import Oefening, GewichtType, HalterType, RepetitieType, SetType, SetGroepType, Status
@@ -30,7 +29,7 @@ class SessieSet:
     trainingsgewicht: float | None = None
     halter: Halter | None = None
     
-    afgerond: bool = False
+    status: Status = Status.GEPLAND
     repetitie_gedaan: int = 0
     gewicht_gedaan: float = 0.0
     
@@ -63,8 +62,16 @@ class SessieSet:
         return self.setcode.gewicht_aantal
     
     @property
+    def set_tekst(self) -> str:
+        return self.setcode.set_tekst
+    
+    @property
     def repetitie_tekst(self) -> str:
         return self.setcode.repetitie_tekst
+    
+    @property
+    def gewicht_tekst(self) -> str:
+        return self.setcode.gewicht_tekst
     
     def paneel(
         self,
@@ -123,16 +130,27 @@ class SessieSet:
             self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"]
             self.gewicht_gedaan = st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"]
             
-            self.afgerond = True
+            self.status = Status.AFGEROND
             
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = False
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = True
         
         if f"label_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
-            st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.setcode}"
+            if self.oefening.gewichtloos:
+                st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.repetitie_tekst}"
+            else:
+                st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.repetitie_tekst}@{self.gewicht_tekst}"
         else:
-            if self.afgerond:
-                st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.setcode}"
+            if self.status == Status.AFGEROND:
+                if self.oefening.gewichtloos:
+                    st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.repetitie_gedaan} ({self.repetitie_tekst})"
+                else:
+                    st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.repetitie_gedaan}@{self.gewicht_gedaan} ({self.repetitie_tekst}@{self.gewicht_tekst})"
+            if self.status == Status.AFGEBROKEN:
+                if self.oefening.gewichtloos:
+                    st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":heavy_multiplication_x: set {self.set_nummer}: {self.repetitie_tekst}"
+                else:
+                    st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":heavy_multiplication_x: set {self.set_nummer}: {self.repetitie_tekst}@{self.gewicht_tekst}"
         
         expander = kolom.expander(
             label = st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"],
@@ -509,7 +527,7 @@ class Sessie:
         if schema.datum_begin is None:
             schema.datum_begin = self.datum
         
-        if all([dag["status"] != Status.GEPLAND for week in schema.sessies.values() for dag in week.values()]):
+        if all(dag["status"] != Status.GEPLAND for week in schema.sessies.values() for dag in week.values()):
             schema.datum_eind = self.datum
             schema.status = Status.AFGEROND
         
@@ -538,7 +556,7 @@ class Sessie:
         if "opslaan_uitgeschakeld" not in st.session_state:
             st.session_state["opslaan_uitgeschakeld"] = True
         else:
-            st.session_state["opslaan_uitgeschakeld"] = not all(sessie_set.afgerond for oefening in self.oefeningen for sessie_setgroep in oefening.sets.values() for sessie_set in sessie_setgroep)
+            st.session_state["opslaan_uitgeschakeld"] = not all(sessie_set.status == Status.AFGEROND for oefening in self.oefeningen for sessie_setgroep in oefening.sets.values() for sessie_set in sessie_setgroep)
         
         # if "volledig_scherm" not in st.session_state:
         #     st.session_state["volledig_scherm"] = True
