@@ -228,7 +228,6 @@ class Resultaat:
         oefeningen = []
         
         for sessie_oefening in sessie.oefeningen:
-            
             resultaat_oefening = ResultaatOefening.van_sessie(sessie_oefening)
             oefeningen.append(resultaat_oefening)
         
@@ -265,6 +264,7 @@ class Resultaat:
                 )
     
     def opslaan(self):
+        
         opslaan_json(
             object = self,
             bestandspad = self.bestandspad,
