@@ -3,7 +3,6 @@ from grienetsiis import Decoder, Encoder
 from mjolnir.basis import Register, Setcode
 from mjolnir.schema import Schema, Sjabloon
 from mjolnir.sessie import Halterstang, Halterschijf, paneel
-from mjolnir.resultaat import Resultaat, ResultaatSet, ResultaatOefening
 
 
 __all__ = [
