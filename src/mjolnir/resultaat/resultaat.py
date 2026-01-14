@@ -206,28 +206,6 @@ class ResultaatOefening:
             resultaten_dict["dag"].append(resultaat["dag"])
         
         return resultaten_dict
-    
-    @staticmethod
-    def recent_e1rm(
-        oefening: Oefening,
-        aantal: int = 10,
-        ) -> List[Dict[str, Any]]:
-        
-        resultaten = ResultaatOefening.recent(
-            oefening = oefening,
-            aantal = aantal,
-            )
-        e1rms = []
-        
-        for resultaat in resultaten:
-            
-            e1rm = max(resultaat_set.e1rm for resultaat_set in resultaat["resultaat"].sets)
-            e1rms.append({
-                "datum": resultaat["datum"],
-                "e1rm": e1rm,
-                })
-        
-        return e1rms
 
 @dataclass
 class Resultaat:
