@@ -533,11 +533,14 @@ class Sessie:
             oefeningen = oefeningen,
             )
     
-    def opslaan(self) -> None:
+    def opslaan(
+        self,
+        afgebroken: bool = False,
+        ) -> None:
         
         schema = Register().schema[self.schema_uuid]
         
-        schema.sessies[f"week {self.week}"][f"dag {self.dag}"]["status"] = Status.AFGEROND
+        schema.sessies[f"week {self.week}"][f"dag {self.dag}"]["status"] = Status.AFGEBROKEN if afgebroken else Status.AFGEROND
         schema.sessies[f"week {self.week}"][f"dag {self.dag}"]["datum"] = self.datum
         
         if schema.datum_begin is None:
@@ -555,7 +558,7 @@ class Sessie:
     
     def paneel(self):
         
-        top = st.empty()
+        top_titel, top_subtitel, top_knop_afbreken, top_knop_opslaan = st.columns([0.2, 0.6, 0.1, 0.1], vertical_alignment = "bottom")
         
         aantal_hoofdoefeningen = sum(oefening.hoofdoefening for oefening in self.oefeningen)
         kolommen = st.columns(aantal_hoofdoefeningen + 1)
@@ -578,7 +581,7 @@ class Sessie:
         #     st.session_state["volledig_scherm"] = True
         #     keyboard.press_and_release("f11")
         
-        if top.button(
+        if top_knop_opslaan.button(
             label = "opslaan en afsluiten",
             key = "opslaan",
             disabled = st.session_state["opslaan_uitgeschakeld"],
@@ -591,3 +594,19 @@ class Sessie:
             pid = os.getpid()
             p = psutil.Process(pid)
             p.terminate()
+        
+        if top_knop_afbreken.button(
+            label = "afbreken en afsluiten",
+            key = "afbreken",
+            ):
+            
+            st.session_state["sessie"].opslaan(afgebroken = True)
+            st.session_state["register"].opslaan()
+            
+            keyboard.press_and_release("ctrl+w")
+            pid = os.getpid()
+            p = psutil.Process(pid)
+            p.terminate()
+        
+        top_titel.header(f"{self.datum.strftime("%A %d %B %Y")}")
+        top_subtitel.subheader(f"{Register().schema[self.schema_uuid].naam}, week {self.week} dag {self.dag}")
