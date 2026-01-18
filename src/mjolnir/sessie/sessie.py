@@ -59,6 +59,8 @@ class SessieSet:
     
     @property
     def gewicht_aantal(self) -> int | None:
+        if self.gewicht_type == GewichtType.PERCENTAGE:
+            return self.setcode.gewicht_aantal / 100 * self.trainingsgewicht
         return self.setcode.gewicht_aantal
     
     @property
