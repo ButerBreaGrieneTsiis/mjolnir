@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 class ResultaatSet:
     
     repetities: int
+    repetities_links: int | None = None
     gewicht: float | None = None
     
     DECODER: ClassVar[Decoder | None] = None
@@ -28,13 +29,13 @@ class ResultaatSet:
         sessie_set: "SessieSet",
         ) -> "ResultaatSet":
         
-        if sessie_set.gewicht_type == GewichtType.GEWICHTLOOS:
-            return cls(
-                repetities = sessie_set.repetitie_gedaan,
-                )
+        repetities_links = sessie_set.repetitie_links_gedaan if sessie_set.oefening.dextraal else None
+        gewicht_gedaan = None if sessie_set.gewicht_type == GewichtType.GEWICHTLOOS else sessie_set.gewicht_gedaan
+        
         return cls(
             repetities = sessie_set.repetitie_gedaan,
-            gewicht = sessie_set.gewicht_gedaan,
+            repetities_links = repetities_links,
+            gewicht = gewicht_gedaan,
             )
     
     @classmethod
@@ -46,14 +47,7 @@ class ResultaatSet:
         return cls(**dict)
     
     def naar_json(self) -> Dict[str, Any]:
-        if self.gewicht is None:
-            return {
-                "repetities": self.repetities,
-                }
-        return {
-                "repetities": self.repetities,
-                "gewicht": self.gewicht,
-                }
+        return {veld: waarde for veld, waarde in self.__dict__.items() if waarde is not None}
     
     @property
     def tekst(self) -> str:

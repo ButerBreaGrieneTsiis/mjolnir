@@ -34,6 +34,7 @@ class SessieSet:
     
     status: Status = Status.GEPLAND
     repetitie_gedaan: int = 0
+    repetitie_links_gedaan: int = 0
     gewicht_gedaan: float = 0.0
     
     @property
@@ -131,6 +132,9 @@ class SessieSet:
         # aantal repetities van deze set
         if f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"] = aantal_repetities
+            
+            if self.oefening.dextraal:
+                st.session_state[f"repetities_links_{self.oefening.naam_underscore}_{self.set_nummer}"] = aantal_repetities
         
         # hoeveelheid gewicht van deze set
         if f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
@@ -152,6 +156,8 @@ class SessieSet:
         if st.session_state.get(f"knop_afronden_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
             self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"]
+            if self.oefening.dextraal:
+                self.repetitie_links_gedaan = st.session_state[f"repetities_links_{self.oefening.naam_underscore}_{self.set_nummer}"]
             self.gewicht_gedaan = st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"]
             
             if self.set_type in (SetType.AMSAP, SetType.VRIJ) and self.status == Status.GEPLAND:
@@ -235,12 +241,29 @@ class SessieSet:
             border = False,
             )
         
-        formulier.slider(
-            label = "repetities",
-            min_value = 0,
-            max_value = max_repetities,
-            key = f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}",
-            )
+        if self.oefening.dextraal:
+            
+            formulier.slider(
+                label = "rechts",
+                min_value = 0,
+                max_value = max_repetities,
+                key = f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}",
+                )
+            
+            formulier.slider(
+                label = "links",
+                min_value = 0,
+                max_value = max_repetities,
+                key = f"repetities_links_{self.oefening.naam_underscore}_{self.set_nummer}",
+                )
+        else:
+            
+            formulier.slider(
+                label = "repetities",
+                min_value = 0,
+                max_value = max_repetities,
+                key = f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}",
+                )
         
         formulier_knop_afronden, formulier_knop_afbreken, formulier_knop_verwijderen, _ = formulier.columns([0.2, 0.2, 0.25, 0.35])
         
@@ -271,6 +294,9 @@ class SessieSet:
         st.session_state["opslaan_uitgeschakeld"] = True
         
         st.session_state[f"repetities_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.repetitie_gedaan
+        if self.oefening.dextraal:
+            st.session_state[f"repetities_links_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.repetitie_links_gedaan
+        
         if not self.oefening.gewichtloos:
             st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{set.set_nummer}"] = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
             st.session_state[f"gewicht_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.gewicht_gedaan

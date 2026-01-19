@@ -87,12 +87,14 @@ class Oefening(Enum):
         naam: str,
         spiergroepen: List[Spiergroep],
         oefening_type: OefeningType,
+        dextraal: bool = False,
         ):
         
         oefening = object.__new__(cls)
         oefening._value = naam
         oefening.spiergroepen = spiergroepen
         oefening.oefening_type = oefening_type
+        oefening.dextraal = dextraal
         return oefening
     
     # lichaamsgewicht
@@ -106,7 +108,7 @@ class Oefening(Enum):
     
     # gewicht
     SIT_UPS_GEWICHT = "sit-ups met gewicht", [Spiergroep.BUIKSPIEREN], OefeningType.GEWICHT
-    LATERAL_RAISE = "lateral raise", [Spiergroep.SCHOUDERS], OefeningType.GEWICHT
+    LATERAL_RAISE = "lateral raise", [Spiergroep.SCHOUDERS], OefeningType.GEWICHT, True
     
     # barbell
     PRESS = "overhead press", [Spiergroep.SCHOUDERS], OefeningType.BARBELL
