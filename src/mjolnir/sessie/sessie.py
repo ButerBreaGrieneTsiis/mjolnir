@@ -1,4 +1,4 @@
-from copy import copy, deepcopy
+from copy import copy
 from dataclasses import dataclass
 import datetime as dt
 import keyboard
@@ -25,6 +25,9 @@ class SessieSet:
     
     set_nummer: int
     oefening: Oefening
+    
+    sessie_oefening: "SessieOefening" = None
+    setgroep: str = None
     
     trainingsgewicht: float | None = None
     halter: Halter | None = None
@@ -128,6 +131,7 @@ class SessieSet:
         if f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
             st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = hoeveelheid_gewicht
         
+        # instellen van het gewicht van deze set, indien aanwezig
         if st.session_state.get(f"knop_gewicht_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
             if self.oefening.halter_type is not None:
@@ -139,16 +143,21 @@ class SessieSet:
             else:
                 st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"] = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
         
+        # afronden van deze set
         if st.session_state.get(f"knop_afronden_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
             self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"]
             self.gewicht_gedaan = st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"]
             
+            if self.set_type in (SetType.AMSAP, SetType.VRIJ):
+                self.toevoegen_set()
+            
             self.status = Status.AFGEROND
             
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = False
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = True
-        
+            
+        # afbreken van deze set
         if st.session_state.get(f"knop_afbreken_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
             self.status = Status.AFGEBROKEN
@@ -156,6 +165,7 @@ class SessieSet:
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = False
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = True
         
+        # naam van deze set
         if f"label_{self.oefening.naam_underscore}_{self.set_nummer}" not in st.session_state:
             if self.oefening.gewichtloos:
                 st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.repetitie_tekst}"
@@ -240,42 +250,25 @@ class SessieSet:
             )
         
         return expander
-
-@dataclass
-class SetKnop:
     
-    sessie_oefening: "SessieOefening"
-    setgroep: str
-    set_sjabloon: SessieSet
-    set_nummer: int
-    
-    def toevoegen_set(self):
+    def toevoegen_set(self) -> None:
         
-        self.set_nummer += 1
-        
-        set = copy(self.set_sjabloon)
-        set.set_nummer = self.set_nummer
+        set = copy(self)
+        set.set_nummer += 1
         
         st.session_state["opslaan_uitgeschakeld"] = True
-        self.sessie_oefening.sets[self.setgroep].append(set)
-    
-    def paneel(
-        self,
-        kolom,
-        ):
         
-        kolom.button(
-            label = "set toevoegen",
-            key = f"setknop_{self.sessie_oefening.oefening.naam_underscore}_{self.setgroep}",
-            on_click = self.toevoegen_set,
-            )
+        st.session_state[f"repetities_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.repetitie_gedaan
+        st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{set.set_nummer}"] = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
+        st.session_state[f"gewicht_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.gewicht_gedaan
+        
+        self.sessie_oefening.sets[self.setgroep].append(set)
 
 @dataclass
 class SessieOefening:
     
     oefening: Oefening
     sets: Dict[str, List[SessieSet]]
-    setknoppen: Dict[str, SetKnop] = None
     trainingsgewicht: float = None
     
     def __post_init__(self):
@@ -304,22 +297,12 @@ class SessieOefening:
             for sessie_set, halter in zip([sessie_set for sessie_setgroep in self.sets.values() for sessie_set in sessie_setgroep], halters):
                 sessie_set.halter = halter
         
-        setknoppen = {}
-        
         for sessie_setgroep, sessie_sets in self.sets.items():
             
             if len(sessie_sets) == 1 and sessie_sets[0].set_type in (SetType.AMSAP, SetType.VRIJ):
                 
-                setknop = SetKnop(
-                    sessie_oefening = self,
-                    setgroep = sessie_setgroep,
-                    set_sjabloon = deepcopy(sessie_sets[0]),
-                    set_nummer = sessie_sets[0].set_nummer,
-                    )
-                
-                setknoppen[sessie_setgroep] = setknop
-        
-        self.setknoppen = setknoppen
+                sessie_sets[0].sessie_oefening = self
+                sessie_sets[0].setgroep = sessie_setgroep
     
     @classmethod
     def nieuw(
@@ -425,9 +408,6 @@ class SessieOefening:
             
             for sessie_set in sessie_sets:
                 sessie_set.paneel(kolom)
-            
-            if sessie_setgroep in self.setknoppen:
-                self.setknoppen[sessie_setgroep].paneel(kolom)
         
         for regel in self.titel.split("\n"):
             titel.markdown(f":primary[{regel}]")
