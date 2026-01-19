@@ -95,6 +95,11 @@ class SessieSet:
         kolom,
         ):
         
+        # verwijderen van deze set
+        if st.session_state.get(f"knop_verwijderen_{self.oefening.naam_underscore}_{self.set_nummer}", False):
+            self.verwijderen_set()
+            return
+        
         if self.repetitie_type == RepetitieType.AANTAL:
             max_repetities = self.repetitie_aantal
             aantal_repetities = self.repetitie_aantal
@@ -237,7 +242,7 @@ class SessieSet:
             key = f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
-        formulier_knop_afronden, formulier_knop_afbreken, _ = formulier.columns([0.2, 0.2, 0.6])
+        formulier_knop_afronden, formulier_knop_afbreken, formulier_knop_verwijderen, _ = formulier.columns([0.2, 0.2, 0.25, 0.35])
         
         formulier_knop_afronden.form_submit_button(
             label = "afronden",
@@ -249,6 +254,13 @@ class SessieSet:
             key = f"knop_afbreken_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
+        if self.set_type in (SetType.AMSAP, SetType.VRIJ) and self.set_nummer > 1:
+            
+            formulier_knop_verwijderen.form_submit_button(
+                label = "verwijderen",
+                key = f"knop_verwijderen_{self.oefening.naam_underscore}_{self.set_nummer}",
+                )
+        
         return expander
     
     def toevoegen_set(self) -> None:
@@ -259,10 +271,14 @@ class SessieSet:
         st.session_state["opslaan_uitgeschakeld"] = True
         
         st.session_state[f"repetities_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.repetitie_gedaan
-        st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{set.set_nummer}"] = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
-        st.session_state[f"gewicht_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.gewicht_gedaan
+        if not self.oefening.gewichtloos:
+            st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{set.set_nummer}"] = st.session_state[f"gewicht_ingevuld_{self.oefening.naam_underscore}_{self.set_nummer}"]
+            st.session_state[f"gewicht_{self.oefening.naam_underscore}_{set.set_nummer}"] = self.gewicht_gedaan
         
         self.sessie_oefening.sets[self.setgroep].append(set)
+    
+    def verwijderen_set(self) -> None:
+        self.sessie_oefening.sets[self.setgroep].pop(-1)
 
 @dataclass
 class SessieOefening:
