@@ -154,7 +154,7 @@ class SessieSet:
             self.repetitie_gedaan = st.session_state[f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}"]
             self.gewicht_gedaan = st.session_state[f"gewicht_{self.oefening.naam_underscore}_{self.set_nummer}"]
             
-            if self.set_type in (SetType.AMSAP, SetType.VRIJ):
+            if self.set_type in (SetType.AMSAP, SetType.VRIJ) and self.status == Status.GEPLAND:
                 self.toevoegen_set()
             
             self.status = Status.AFGEROND
