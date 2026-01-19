@@ -558,7 +558,16 @@ class Sessie:
     
     def paneel(self):
         
-        top_titel, top_subtitel, top_knop_afbreken, top_knop_opslaan = st.columns([0.2, 0.6, 0.1, 0.1], vertical_alignment = "bottom")
+        top_titel, top_knop_afbreken, top_knop_opslaan = st.columns([0.7, 0.15, 0.15], vertical_alignment = "bottom")
+        
+        top_titel.header(
+            body = f"{Register().schema[self.schema_uuid].naam}, week {self.week} dag {self.dag}",
+            anchor = False,
+            )
+        st.subheader(
+            body = f"{self.datum.strftime("%A %d %B %Y")}",
+            anchor = False,
+            )
         
         aantal_hoofdoefeningen = sum(oefening.hoofdoefening for oefening in self.oefeningen)
         kolommen = st.columns(aantal_hoofdoefeningen + 1)
@@ -582,7 +591,7 @@ class Sessie:
         #     keyboard.press_and_release("f11")
         
         if top_knop_opslaan.button(
-            label = "opslaan en afsluiten",
+            label = ":white_check_mark: opslaan en afsluiten",
             key = "opslaan",
             disabled = st.session_state["opslaan_uitgeschakeld"],
             ):
@@ -596,7 +605,7 @@ class Sessie:
             p.terminate()
         
         if top_knop_afbreken.button(
-            label = "afbreken en afsluiten",
+            label = ":heavy_multiplication_x: afbreken en afsluiten",
             key = "afbreken",
             ):
             
@@ -607,6 +616,3 @@ class Sessie:
             pid = os.getpid()
             p = psutil.Process(pid)
             p.terminate()
-        
-        top_titel.header(f"{self.datum.strftime("%A %d %B %Y")}")
-        top_subtitel.subheader(f"{Register().schema[self.schema_uuid].naam}, week {self.week} dag {self.dag}")
