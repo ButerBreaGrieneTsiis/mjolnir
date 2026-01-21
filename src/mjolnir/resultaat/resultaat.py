@@ -49,17 +49,27 @@ class ResultaatSet:
     def naar_json(self) -> Dict[str, Any]:
         return {veld: waarde for veld, waarde in self.__dict__.items() if waarde is not None}
     
-    @property
-    def tekst(self) -> str:
+    def _tekst(self, links: bool = False) -> str:
+        
+        repetitie_veld = "repetities_links" if links else "repetities"
+        
         if self.gewicht is None:
-            return f"{self.repetities}"
+            return f"{getattr(self, repetitie_veld)}"
         
         gewicht_tekst = f"{self.gewicht:.2f}"
         if gewicht_tekst[-2:] == "00":
-            return f"{self.repetities}@{gewicht_tekst[:-3]}"
+            return f"{getattr(self, repetitie_veld)}@{gewicht_tekst[:-3]}"
         if gewicht_tekst[-1] == "0":
-            return f"{self.repetities}@{gewicht_tekst[:-1]}"
-        return f"{self.repetities}@{gewicht_tekst}"
+            return f"{getattr(self, repetitie_veld)}@{gewicht_tekst[:-1]}"
+        return f"{getattr(self, repetitie_veld)}@{gewicht_tekst}"
+    
+    @property
+    def tekst(self) -> str:
+        return self._tekst()
+    
+    @property
+    def tekst_links(self) -> str:
+        return self._tekst(links = True)
     
     @property
     def volume(self) -> float | None:
@@ -68,10 +78,22 @@ class ResultaatSet:
         return self.gewicht * self.repetities
     
     @property
+    def volume_links(self) -> float | None:
+        if self.gewicht is None:
+            return None
+        return self.gewicht * self.repetities_links
+    
+    @property
     def e1rm(self) -> float | None:
         if self.gewicht is None:
             return None
         return round(self.gewicht * (1 + self.repetities/30), 2)
+    
+    @property
+    def e1rm_links(self) -> float | None:
+        if self.gewicht is None:
+            return None
+        return round(self.gewicht * (1 + self.repetities_links/30), 2)
 
 @dataclass
 class ResultaatOefening:
@@ -115,23 +137,32 @@ class ResultaatOefening:
             "sets": self.sets,
             }
     
+    def _tekst(self, links: bool = False) -> str:
+        
+        repetitie_veld = "repetities_links" if links else "repetities"
+        
+        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)) == 1 and len(set(getattr(resultaat_set, repetitie_veld) for resultaat_set in self.sets)) == 1:
+            if self.sets[0].gewicht is not None:
+                return f"{len(self.sets)}x{getattr(self.sets[0], repetitie_veld)}@{self.sets[0].gewicht}"
+            return f"{len(self.sets)}x{getattr(self.sets[0], repetitie_veld)}"
+        
+        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)) == 1:
+            if self.sets[0].gewicht is not None:
+                return "(" + ", ".join(f"{getattr(resultaat_set, repetitie_veld)}" for resultaat_set in self.sets) + f")@{self.sets[0].gewicht}"
+            return  ", ".join(f"{getattr(resultaat_set, repetitie_veld)}" for resultaat_set in self.sets)
+        
+        if len(set(getattr(resultaat_set, repetitie_veld) for resultaat_set in self.sets)) == 1:
+            return f"{len(self.sets)}x{getattr(self.sets[0], repetitie_veld)}@(" + ", ".join(f"{resultaat_set.gewicht}" for resultaat_set in self.sets) + ")"
+        
+        return ", ".join(resultaat_set._tekst(links) for resultaat_set in self.sets)
+    
     @property
     def tekst(self) -> str:
-        
-        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)) == 1 and len(set(resultaat_set.repetities for resultaat_set in self.sets)):
-            if self.sets[0].gewicht is not None:
-                return f"{len(self.sets)}x{self.sets[0].repetities}@{self.sets[0].gewicht}"
-            return f"{len(self.sets)}x{self.sets[0].repetities}"
-        
-        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)):
-            if self.sets[0].gewicht is not None:
-                return "(" + ", ".join(f"{resultaat_set.repetities}" for resultaat_set in self.sets) + f")@{self.sets[0].gewicht}"
-            return  ", ".join(f"{resultaat_set.repetities}" for resultaat_set in self.sets)
-        
-        if len(set(resultaat_set.repetities for resultaat_set in self.sets)):
-            return f"{len(self.sets)}x{self.sets[0].repetities}@(" + ", ".join(f"{resultaat_set.gewicht}" for resultaat_set in self.sets) + ")"
-        
-        return ", ".join(resultaat_set.tekst for resultaat_set in self.sets)
+        return self._tekst()
+    
+    @property
+    def tekst_links(self) -> str:
+        return self._tekst(links = True)
     
     @property
     def volume(self) -> float | None:
@@ -140,10 +171,22 @@ class ResultaatOefening:
         return sum(set.volume for set in self.sets)
     
     @property
+    def volume_links(self) -> float | None:
+        if self.oefening.gewichtloos:
+            return None
+        return sum(set.volume_links for set in self.sets)
+    
+    @property
     def e1rm(self) -> float | None:
         if self.oefening.gewichtloos:
             return None
         return max(set.e1rm for set in self.sets)
+    
+    @property
+    def e1rm_links(self) -> float | None:
+        if self.oefening.gewichtloos:
+            return None
+        return max(set.e1rm_links for set in self.sets)
     
     @staticmethod
     def tabel_recent(
@@ -185,20 +228,42 @@ class ResultaatOefening:
             "dag": [],
             }
         
+        if oefening.dextraal:
+            resultaten_dict["sets (r)"] = []
+            resultaten_dict["sets (l)"] = []
+        
         if not oefening.gewichtloos:
             resultaten_dict["volume"] = []
             resultaten_dict["e1rm"] = []
+            if oefening.dextraal:
+                resultaten_dict["volume (r)"] = []
+                resultaten_dict["volume (l)"] = []
+                resultaten_dict["e1rm (r)"] = []
+                resultaten_dict["e1rm (l)"] = []
         
         for resultaat in resultaten:
             resultaten_dict["datum"].append(resultaat["datum"].strftime("%a %d %b %Y"))
             resultaten_dict["#sets"].append(len(resultaat["resultaat_oefening"].sets))
             resultaten_dict["sets"].append(resultaat["resultaat_oefening"].tekst)
+            if oefening.dextraal:
+                resultaten_dict["sets (r)"].append(resultaat["resultaat_oefening"].tekst)
+                resultaten_dict["sets (l)"].append(resultaat["resultaat_oefening"].tekst_links)
             if not oefening.gewichtloos:
                 resultaten_dict["volume"].append(decimaal_getal(resultaat["resultaat_oefening"].volume))
                 resultaten_dict["e1rm"].append(decimaal_getal(resultaat["resultaat_oefening"].e1rm))
+                if oefening.dextraal:
+                    resultaten_dict["volume (r)"].append(decimaal_getal(resultaat["resultaat_oefening"].volume))
+                    resultaten_dict["volume (l)"].append(decimaal_getal(resultaat["resultaat_oefening"].volume_links))
+                    resultaten_dict["e1rm (r)"].append(decimaal_getal(resultaat["resultaat_oefening"].e1rm))
+                    resultaten_dict["e1rm (l)"].append(decimaal_getal(resultaat["resultaat_oefening"].e1rm_links))
             resultaten_dict["schema"].append(resultaat["schema"])
             resultaten_dict["week"].append(resultaat["week"])
             resultaten_dict["dag"].append(resultaat["dag"])
+        
+        if oefening.dextraal:
+            resultaten_dict.pop("sets")
+            resultaten_dict.pop("volume")
+            resultaten_dict.pop("e1rm")
         
         return resultaten_dict
 
@@ -290,6 +355,7 @@ ResultaatSet.DECODER = Decoder(
     decoder_functie = ResultaatSet.van_json,
     velden = frozenset((
         "repetities",
+        "repetities_links",
         "gewicht",
         ))
     )
