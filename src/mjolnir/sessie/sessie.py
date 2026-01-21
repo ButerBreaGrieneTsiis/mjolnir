@@ -13,7 +13,7 @@ from mjolnir.kern import CONFIG, Register, Setcode
 from mjolnir.kern.enums import Oefening, GewichtType, HalterType, RepetitieType, SetType, SetGroepType, Status
 from mjolnir.sessie import Halter
 from mjolnir.resultaat import ResultaatOefening, Resultaat
-
+from .functies import st_horizontaal
 
 locale.setlocale(locale.LC_ALL, "nl_NL.UTF-8")
 
@@ -582,7 +582,7 @@ class Sessie:
         kolom_titel, kolom_knoppen = st.columns([0.5, 0.5], vertical_alignment = "bottom")
         
         with kolom_knoppen:
-            with st_horizontal():
+            with st_horizontaal(uitlijning = "rechts"):
                 top_knop_opslaan = st.empty()
                 top_knop_afbreken = st.empty()
         
@@ -590,7 +590,7 @@ class Sessie:
             body = f"{Register().schema[self.schema_uuid].naam}, week {self.week} dag {self.dag}",
             anchor = False,
             )
-        st.subheader(
+        kolom_titel.subheader(
             body = f"{self.datum.strftime("%A %d %B %Y")}",
             anchor = False,
             )

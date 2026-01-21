@@ -1,12 +1,12 @@
 import streamlit as st
 
 from mjolnir.kern import Register
-from mjolnir.sessie.sessie import Sessie
+from mjolnir.sessie import Sessie
 
 
 st.set_page_config(layout = "wide")
 
-def paneel():
+def programma_sessie():
     
     st.markdown(
         f"""
