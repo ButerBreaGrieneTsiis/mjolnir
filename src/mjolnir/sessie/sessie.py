@@ -583,8 +583,8 @@ class Sessie:
         
         with kolom_knoppen:
             with st_horizontaal(uitlijning = "rechts"):
-                top_knop_opslaan = st.empty()
                 top_knop_afbreken = st.empty()
+                top_knop_opslaan = st.empty()
         
         kolom_titel.header(
             body = f"{Register().schema[self.schema_uuid].naam}, week {self.week} dag {self.dag}",
