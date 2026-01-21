@@ -1,13 +1,16 @@
+"""
+Mjölnir
+"""
 from grienetsiis import Decoder, Encoder
 
-from mjolnir.basis import Register, Setcode
+from mjolnir.kern import Register, Setcode
 from mjolnir.schema import Schema, Sjabloon
-from mjolnir.sessie import Halterstang, Halterschijf, paneel
+from mjolnir.sessie import Halterstang, Halterschijf, programma_sessie
 
 
 __all__ = [
     "Register",
-    "paneel",
+    "programma_sessie",
     ]
 
 __version__ = "0.1.0-dev"

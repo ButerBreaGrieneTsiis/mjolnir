@@ -170,13 +170,13 @@ class Setcode:
             repetitie_tekst = tekst.split("@")[0]
         
         if "?" in repetitie_tekst:
-            return (0, REPETITIE_AANTAL_MAX, RepetitieType.VRIJ)
+            return (0, CONFIG["REPETITIE_AANTAL_MAX"], RepetitieType.VRIJ)
         if "-" in repetitie_tekst and "+" in repetitie_tekst:
             return (int(repetitie_tekst.split("-")[0]), int(repetitie_tekst.split("-")[1].replace("+", "")), RepetitieType.BEREIK_AMRAP)
         if "-" in repetitie_tekst:
             return (int(repetitie_tekst.split("-")[0]), int(repetitie_tekst.split("-")[1]), RepetitieType.BEREIK)
         if "+" in repetitie_tekst:
-            return (int(repetitie_tekst.replace("+", "")), REPETITIE_AANTAL_MAX, RepetitieType.AMRAP)
+            return (int(repetitie_tekst.replace("+", "")), CONFIG["REPETITIE_AANTAL_MAX"], RepetitieType.AMRAP)
         return (int(repetitie_tekst), int(repetitie_tekst), RepetitieType.AANTAL)
     
     @staticmethod
@@ -199,8 +199,8 @@ class Setcode:
     def set_aantal(self, waarde: int):
         if not isinstance(waarde, int):
             raise ValueError(f"`set_aantal` moet een `int` zijn, niet \"{waarde}\" (type \"{type(waarde)}\")")
-        if waarde < 0 or waarde > SET_AANTAL_MAX:
-            raise ValueError(f"`set_aantal` moet tussen {0} en {SET_AANTAL_MAX} liggen")
+        if waarde < 0 or waarde > CONFIG["SET_AANTAL_MAX"]:
+            raise ValueError(f"`set_aantal` moet tussen {0} en {CONFIG["SET_AANTAL_MAX"]} liggen")
         self._set_aantal = waarde
         if waarde == 0:
             self._set_type = SetType.VRIJ
@@ -223,8 +223,8 @@ class Setcode:
     def repetitie_aantal(self, waarde: int):
         if not isinstance(waarde, int):
             raise ValueError(f"`repetitie_aantal` moet een `int` zijn, niet \"{waarde}\" (type \"{type(waarde)}\")")
-        if waarde < 0 or waarde > REPETITIE_AANTAL_MAX:
-            raise ValueError(f"`repetitie_aantal` moet tussen {0} en {REPETITIE_AANTAL_MAX} liggen")
+        if waarde < 0 or waarde > CONFIG["REPETITIE_AANTAL_MAX"]:
+            raise ValueError(f"`repetitie_aantal` moet tussen {0} en {CONFIG["REPETITIE_AANTAL_MAX"]} liggen")
         self._repetitie_aantal = waarde
         if waarde == 0:
             self._repetitie_type = RepetitieType.VRIJ
@@ -255,8 +255,8 @@ class Setcode:
     def gewicht_aantal(self, waarde: int | float | None):
         if not isinstance(waarde, (int, float)) and waarde is not None:
             raise ValueError(f"`gewicht_aantal` moet een `int`, `float` of `None` zijn, niet \"{waarde}\" (type \"{type(waarde)}\")")
-        if waarde is not None and self.gewicht_type == GewichtType.GEWICHT and (waarde < 0.0 or waarde > GEWICHT_AANTAL_MAX):
-            raise ValueError(f"`gewicht_aantal` moet tussen {0} en {GEWICHT_AANTAL_MAX} liggen")
+        if waarde is not None and self.gewicht_type == GewichtType.GEWICHT and (waarde < 0.0 or waarde > CONFIG["GEWICHT_AANTAL_MAX"]):
+            raise ValueError(f"`gewicht_aantal` moet tussen {0} en {CONFIG["GEWICHT_AANTAL_MAX"]} liggen")
         self._gewicht_aantal = waarde
         if waarde is None:
             self._gewicht_type = GewichtType.GEWICHTLOOS
