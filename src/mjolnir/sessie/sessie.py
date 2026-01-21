@@ -9,9 +9,8 @@ from typing import Any, Dict, List
 
 import streamlit as st
 
-from mjolnir.basis import Register, Setcode
-from mjolnir.basis.constantes import *
-from mjolnir.basis.enums import Oefening, GewichtType, HalterType, RepetitieType, SetType, SetGroepType, Status
+from mjolnir.kern import CONFIG, Register, Setcode
+from mjolnir.kern.enums import Oefening, GewichtType, HalterType, RepetitieType, SetType, SetGroepType, Status
 from mjolnir.sessie import Halter
 from mjolnir.resultaat import ResultaatOefening, Resultaat
 
@@ -108,7 +107,7 @@ class SessieSet:
             max_repetities = self.repetitie_aantal[1]
             aantal_repetities = self.repetitie_aantal[1]
         else:
-            max_repetities = REPETITIE_AANTAL_MAX
+            max_repetities = CONFIG["REPETITIE_AANTAL_MAX"]
             if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
                 aantal_repetities = self.repetitie_aantal[1]
             else:
@@ -222,7 +221,7 @@ class SessieSet:
                 border = False,
                 )
             
-            max_value = int(GEWICHT_AANTAL_MAX) if self.oefening.halter_type == HalterType.BARBELL else 50
+            max_value = int(CONFIG["GEWICHT_AANTAL_MAX"]) if self.oefening.halter_type == HalterType.BARBELL else 50
             
             formulier_gewicht.slider(
                 label = "gewicht",
@@ -580,9 +579,14 @@ class Sessie:
     
     def paneel(self):
         
-        top_titel, top_knop_afbreken, top_knop_opslaan = st.columns([0.7, 0.15, 0.15], vertical_alignment = "bottom")
+        kolom_titel, kolom_knoppen = st.columns([0.5, 0.5], vertical_alignment = "bottom")
         
-        top_titel.header(
+        with kolom_knoppen:
+            with st_horizontal():
+                top_knop_opslaan = st.empty()
+                top_knop_afbreken = st.empty()
+        
+        kolom_titel.header(
             body = f"{Register().schema[self.schema_uuid].naam}, week {self.week} dag {self.dag}",
             anchor = False,
             )

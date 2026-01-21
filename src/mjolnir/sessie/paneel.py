@@ -1,6 +1,6 @@
 import streamlit as st
 
-from mjolnir.basis import Register
+from mjolnir.kern import Register
 from mjolnir.sessie.sessie import Sessie
 
 
