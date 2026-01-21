@@ -2,9 +2,8 @@ from dataclasses import dataclass
 import datetime as dt
 from typing import ClassVar, Dict, List
 
-from mjolnir.basis import Register, GeregistreerdObject
-from mjolnir.basis.constantes import *
-from mjolnir.basis.enums import OefeningType, GewichtType, Oefening, Status, SetGroepType
+from mjolnir.kern import CONFIG, Register, GeregistreerdObject
+from mjolnir.kern.enums import OefeningType, GewichtType, Oefening, Status, SetGroepType
 from mjolnir.schema.sjabloon import Sjabloon
 
 from grienetsiis import invoer_validatie, invoer_kiezen
@@ -126,7 +125,7 @@ class Schema(GeregistreerdObject):
                             trainingsgewicht = invoer_validatie(
                                 beschrijving = "trainingsgewicht",
                                 type = float,
-                                bereik = (0.0, GEWICHT_AANTAL_MAX),
+                                bereik = (0.0, CONFIG["GEWICHT_AANTAL_MAX"]),
                                 )
                             
                             trainingsgewichten.append({
