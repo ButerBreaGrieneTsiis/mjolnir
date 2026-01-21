@@ -146,7 +146,7 @@ class ResultaatOefening:
         return max(set.e1rm for set in self.sets)
     
     @staticmethod
-    def recent(
+    def tabel_recent(
         oefening: Oefening,
         aantal: int = 10,
         ) -> Dict[str, List[Any]]:

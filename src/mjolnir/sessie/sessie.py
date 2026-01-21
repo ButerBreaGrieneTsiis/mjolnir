@@ -475,7 +475,7 @@ class SessieOefening:
         ):
         
         if f"recent_resultaat_{self.oefening.naam_underscore}" not in st.session_state:
-            st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"] = ResultaatOefening.recent(self.oefening, 5)
+            st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"] = ResultaatOefening.tabel_recent(self.oefening, 5)
         
         expander = kolom.expander(
             label = f"recente resultaten {self.oefening.naam}",
