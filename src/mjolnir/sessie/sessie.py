@@ -481,7 +481,7 @@ class SessieOefening:
             label = f"recente resultaten {self.oefening.naam}",
             )
         if st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"]:
-            expander.table(
+            expander.dataframe(
                 data = st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"],
                 # hide_index = True,
                 )

@@ -221,11 +221,11 @@ class ResultaatOefening:
         
         resultaten_dict = {
             "datum": [],
-            "#sets": [],
-            "sets": [],
             "schema": [],
             "week": [],
             "dag": [],
+            "#sets": [],
+            "sets": [],
             }
         
         if oefening.dextraal:
