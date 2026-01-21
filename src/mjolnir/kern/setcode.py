@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 
-from .constantes import *
+from .config import CONFIG
 from .enums import GewichtType, RepetitieType, SetType
 
 
@@ -13,7 +13,7 @@ class Setcode:
         gewicht_type: GewichtType = GewichtType.PERCENTAGE,
         set_aantal: int = 1,
         repetitie_aantal: int = 5,
-        repetitie_maximaal: int = REPETITIE_AANTAL_MAX,
+        repetitie_maximaal: int = CONFIG["REPETITIE_AANTAL_MAX"],
         gewicht_aantal: float | int | None = 100,
         ) -> "Setcode":
         
