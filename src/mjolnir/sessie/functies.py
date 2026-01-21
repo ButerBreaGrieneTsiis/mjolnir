@@ -10,14 +10,14 @@ def st_horizontaal(uitlijning: Literal["rechts", "links"] = "links"):
     if uitlijning == "rechts":
         uitlijning_tekst = "justify-content: flex-end;"
     else:
-        uitlijning_tekst = ""
+        uitlijning_tekst = "justify-content: flex-start;"
     
     HORIZONTAL_STYLE = f"""
         <style class = "hide-element">
             .element-container:has(.hide-element) {{
                 display: none;
                 }}
-            div[data-testid = "stVerticalBlock"]:has(> .element-container .horizontal-marker) {{
+            div[data-testid = "stVerticalBlock"]:has(> .element-container .horizontal-marker-{uitlijning}) {{
                 display: flex;
                 flex-direction: row !important;
                 flex-wrap: wrap;
@@ -25,7 +25,7 @@ def st_horizontaal(uitlijning: Literal["rechts", "links"] = "links"):
                 align-items: baseline;
                 {uitlijning_tekst}
                 }}
-            div[data-testid = "stVerticalBlock"]:has(> .element-container .horizontal-marker) div {{
+            div[data-testid = "stVerticalBlock"]:has(> .element-container .horizontal-marker-{uitlijning}) div {{
                 width: max-content !important;
                 }}
         </style>
@@ -33,5 +33,5 @@ def st_horizontaal(uitlijning: Literal["rechts", "links"] = "links"):
     
     st.markdown(HORIZONTAL_STYLE, unsafe_allow_html=True)
     with st.container():
-        st.markdown("""<span class = "hide-element horizontal-marker"></span>""", unsafe_allow_html = True)
+        st.markdown(f"""<span class = "hide-element horizontal-marker-{uitlijning}"></span>""", unsafe_allow_html = True)
         yield

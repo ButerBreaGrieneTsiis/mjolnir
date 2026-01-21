@@ -170,7 +170,10 @@ class SessieSet:
         # afbreken van deze set
         if st.session_state.get(f"knop_afbreken_{self.oefening.naam_underscore}_{self.set_nummer}", False):
             
-            self.status = Status.AFGEBROKEN
+            if self.set_type in (SetType.AMSAP, SetType.VRIJ):
+                self.status = Status.AFGEROND
+            else:
+                self.status = Status.AFGEBROKEN
             
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer}"] = False
             st.session_state[f"expander_{self.oefening.naam_underscore}_{self.set_nummer + 1}"] = True
@@ -264,15 +267,28 @@ class SessieSet:
                 key = f"repetities_{self.oefening.naam_underscore}_{self.set_nummer}",
                 )
         
-        formulier_knop_afronden, formulier_knop_afbreken, formulier_knop_verwijderen, _ = formulier.columns([0.2, 0.2, 0.25, 0.35])
+        knoppen, _ = formulier.columns([0.9, 0.1], vertical_alignment = "bottom")
+        
+        with knoppen:
+            with st_horizontaal():
+                formulier_knop_afronden = st.empty()
+                formulier_knop_afbreken = st.empty()
+                formulier_knop_verwijderen = st.empty()
+        
+        if self.set_type in (SetType.AMSAP, SetType.VRIJ):
+            label_knop_afronden = "afronden en toevoegen"
+            label_knop_afbreken = "afronden en beëindigen"
+        else:
+            label_knop_afronden = "afronden"
+            label_knop_afbreken = "afbreken"
         
         formulier_knop_afronden.form_submit_button(
-            label = "afronden",
+            label = label_knop_afronden,
             key = f"knop_afronden_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
         formulier_knop_afbreken.form_submit_button(
-            label = "afbreken",
+            label = label_knop_afbreken,
             key = f"knop_afbreken_{self.oefening.naam_underscore}_{self.set_nummer}",
             )
         
