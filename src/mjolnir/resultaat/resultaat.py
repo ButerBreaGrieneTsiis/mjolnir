@@ -6,8 +6,8 @@ from typing import Any, Callable, ClassVar, Dict, List, TYPE_CHECKING
 
 from grienetsiis import Decoder, Encoder, opslaan_json, openen_json, decimaal_getal
 
-from mjolnir.basis import Register
-from mjolnir.basis.enums import Oefening, GewichtType, Status, ENUMS
+from mjolnir.kern import Register
+from mjolnir.kern.enums import Oefening, GewichtType, Status, ENUMS
 
 
 if TYPE_CHECKING:
