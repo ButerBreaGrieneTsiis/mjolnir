@@ -1,7 +1,7 @@
 """
 Mjölnir
 """
-from grienetsiis import Decoder, Encoder
+from grienetsiis.json import Ontcijferaar, Vercijferaar
 
 from mjolnir.kern import Register, Setcode
 from mjolnir.schema import Schema, Sjabloon
@@ -17,31 +17,31 @@ __version__ = "0.1.0-dev"
 
 Register.TYPES["halterstangen"] = {
     "type": Halterstang,
-    "decoder": Halterstang.van_json,
-    "encoder": Halterstang.naar_json,
+    "ontcijferaar": Halterstang.van_json,
+    "vercijferaar": Halterstang.naar_json,
     }
 Register.TYPES["halterschijven"] = {
     "type": Halterschijf,
-    "decoder": Halterschijf.van_json,
-    "encoder": Halterschijf.naar_json,
+    "ontcijferaar": Halterschijf.van_json,
+    "vercijferaar": Halterschijf.naar_json,
     }
 Register.TYPES["schema"] = {
     "type": Schema,
-    "decoder": Schema.van_json,
-    "encoder": Schema.naar_json,
+    "ontcijferaar": Schema.van_json,
+    "vercijferaar": Schema.naar_json,
     }
 Register.TYPES["sjablonen"] = {
     "type": Sjabloon,
-    "decoder": Sjabloon.van_json,
-    "encoder": Sjabloon.naar_json,
+    "ontcijferaar": Sjabloon.van_json,
+    "vercijferaar": Sjabloon.naar_json,
     }
-Register.DECODERS.append(Decoder(
-    decoder_functie = Setcode.van_json,
+Register.ONTCIJFERAARS.append(Ontcijferaar(
+    ontcijfer_functie = Setcode.van_json,
     velden = frozenset((
         "__setcode__",
         )),
     ))
-Register.ENCODERS.append(Encoder(
+Register.VERCIJFERAARS.append(Vercijferaar(
     class_naam = "Setcode",
-    encoder_functie = "naar_json",
+    vercijfer_functie_naam = "naar_json",
     ))

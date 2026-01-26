@@ -1,10 +1,12 @@
+from __future__ import annotations
 from dataclasses import dataclass
 import datetime as dt
 from pathlib import Path
 import re
 from typing import Any, Callable, ClassVar, Dict, List, TYPE_CHECKING
 
-from grienetsiis import Decoder, Encoder, opslaan_json, openen_json, decimaal_getal
+from grienetsiis.json import Ontcijferaar, Vercijferaar, opslaan_json, openen_json
+from grienetsiis.gereedschap import formatteer_getal
 
 from mjolnir.kern import Register
 from mjolnir.kern.enums import Oefening, GewichtType, Status, ENUMS
@@ -20,8 +22,8 @@ class ResultaatSet:
     repetities_links: int | None = None
     gewicht: float | None = None
     
-    DECODER: ClassVar[Decoder | None] = None
-    ENCODER: ClassVar[Encoder | None] = None
+    ONTCIJFERAAR: ClassVar[Ontcijferaar | None] = None
+    VERCIJFERAAR: ClassVar[Vercijferaar | None] = None
     
     @classmethod
     def van_sessie(
@@ -101,8 +103,8 @@ class ResultaatOefening:
     oefening: Oefening
     sets: List[ResultaatSet]
     
-    DECODER: ClassVar[Decoder | None] = None
-    ENCODER: ClassVar[Encoder | None] = None
+    ONTCIJFERAAR: ClassVar[Ontcijferaar | None] = None
+    VERCIJFERAAR: ClassVar[Vercijferaar | None] = None
     
     @classmethod
     def van_sessie(
@@ -249,13 +251,13 @@ class ResultaatOefening:
                 resultaten_dict["sets (r)"].append(resultaat["resultaat_oefening"].tekst)
                 resultaten_dict["sets (l)"].append(resultaat["resultaat_oefening"].tekst_links)
             if not oefening.gewichtloos:
-                resultaten_dict["volume"].append(decimaal_getal(resultaat["resultaat_oefening"].volume))
-                resultaten_dict["e1rm"].append(decimaal_getal(resultaat["resultaat_oefening"].e1rm))
+                resultaten_dict["volume"].append(formatteer_getal(resultaat["resultaat_oefening"].volume))
+                resultaten_dict["e1rm"].append(formatteer_getal(resultaat["resultaat_oefening"].e1rm))
                 if oefening.dextraal:
-                    resultaten_dict["volume (r)"].append(decimaal_getal(resultaat["resultaat_oefening"].volume))
-                    resultaten_dict["volume (l)"].append(decimaal_getal(resultaat["resultaat_oefening"].volume_links))
-                    resultaten_dict["e1rm (r)"].append(decimaal_getal(resultaat["resultaat_oefening"].e1rm))
-                    resultaten_dict["e1rm (l)"].append(decimaal_getal(resultaat["resultaat_oefening"].e1rm_links))
+                    resultaten_dict["volume (r)"].append(formatteer_getal(resultaat["resultaat_oefening"].volume))
+                    resultaten_dict["volume (l)"].append(formatteer_getal(resultaat["resultaat_oefening"].volume_links))
+                    resultaten_dict["e1rm (r)"].append(formatteer_getal(resultaat["resultaat_oefening"].e1rm))
+                    resultaten_dict["e1rm (l)"].append(formatteer_getal(resultaat["resultaat_oefening"].e1rm_links))
             resultaten_dict["schema"].append(resultaat["schema"])
             resultaten_dict["week"].append(resultaat["week"])
             resultaten_dict["dag"].append(resultaat["dag"])
@@ -276,8 +278,8 @@ class Resultaat:
     datum: dt.date
     oefeningen: List[ResultaatOefening]
     
-    DECODER_FUNCTIE: ClassVar[Callable | None] = None
-    ENCODER_FUNCTIE: ClassVar[Callable | None] = None
+    ONTCIJFERAAR_FUNCTIE: ClassVar[Callable | None] = None
+    VERCIJFERAAR_FUNCTIE: ClassVar[Callable | None] = None
     
     @classmethod
     def van_sessie(
@@ -316,12 +318,12 @@ class Resultaat:
             
             return openen_json(
                 bestandspad = bestandspad,
-                decoder_object = Resultaat.DECODER_FUNCTIE,
-                decoder_subobjecten = [
-                    ResultaatOefening.DECODER,
-                    ResultaatSet.DECODER,
+                ontcijfer_functie_object = Resultaat.ONTCIJFERAAR_FUNCTIE,
+                ontcijfer_functie_subobjecten = [
+                    ResultaatOefening.ONTCIJFERAAR,
+                    ResultaatSet.ONTCIJFERAAR,
                     ],
-                enum_dict = ENUMS,
+                ontcijfer_enum = ENUMS,
                 )
     
     def opslaan(self):
@@ -329,12 +331,12 @@ class Resultaat:
         opslaan_json(
             object = self,
             bestandspad = self.bestandspad,
-            encoder_object = Resultaat.ENCODER_FUNCTIE,
-            encoder_subobjecten = [
-                ResultaatOefening.ENCODER,
-                ResultaatSet.ENCODER,
+            vercijfer_functie_object = Resultaat.VERCIJFERAAR_FUNCTIE,
+            vercijfer_functie_subobjecten = [
+                ResultaatOefening.VERCIJFERAAR,
+                ResultaatSet.VERCIJFERAAR,
                 ],
-            enum_dict = ENUMS,
+            vercijfer_enum = ENUMS,
             )
     
     def naar_json(self) -> Dict[str, Any]:
@@ -351,28 +353,28 @@ class Resultaat:
     def bestandspad(self) -> Path:
         return Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
 
-ResultaatSet.DECODER = Decoder(
-    decoder_functie = ResultaatSet.van_json,
+ResultaatSet.ONTCIJFERAAR = Ontcijferaar(
+    ontcijfer_functie = ResultaatSet.van_json,
     velden = frozenset((
         "repetities",
         "repetities_links",
         "gewicht",
         ))
     )
-ResultaatSet.ENCODER = Encoder(
+ResultaatSet.VERCIJFERAAR = Vercijferaar(
     class_naam = "ResultaatSet",
-    encoder_functie = "naar_json",
+    vercijfer_functie_naam = "naar_json",
     )
-ResultaatOefening.DECODER = Decoder(
-    decoder_functie = ResultaatOefening.van_json,
+ResultaatOefening.ONTCIJFERAAR = Ontcijferaar(
+    ontcijfer_functie = ResultaatOefening.van_json,
     velden = frozenset((
         "oefening",
         "sets",
         ))
     )
-ResultaatOefening.ENCODER = Encoder(
+ResultaatOefening.VERCIJFERAAR = Vercijferaar(
     class_naam = "ResultaatOefening",
-    encoder_functie = "naar_json",
+    vercijfer_functie_naam = "naar_json",
     )
-Resultaat.DECODER_FUNCTIE = Resultaat.van_json
-Resultaat.ENCODER_FUNCTIE = Resultaat.naar_json
+Resultaat.ONTCIJFERAAR_FUNCTIE = Resultaat.van_json
+Resultaat.VERCIJFERAAR_FUNCTIE = Resultaat.naar_json

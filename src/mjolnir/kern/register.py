@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
-from grienetsiis import openen_json, opslaan_json, invoer_validatie, invoer_kiezen, Decoder, Encoder
+from grienetsiis.json import openen_json, opslaan_json, Ontcijferaar, Vercijferaar
+from grienetsiis.opdrachtprompt import invoeren, kiezen
 
 from .enums import ENUMS
 
@@ -91,7 +92,7 @@ class Subregister(dict):
         if nieuw_toestaan:
             keuzes = {f"nieuw {self.type.__name__.lower()}": "nieuw"} | keuzes
         
-        keuze_optie = invoer_kiezen(
+        keuze_optie = kiezen(
             beschrijving = f"{self.type.__name__.lower()}",
             keuzes = keuzes,
             )
@@ -112,8 +113,8 @@ class Register(dict, metaclass = Singleton):
     EXTENSIE: str = "json"
     
     TYPES: Dict[str, Dict[str, Any]] = {}
-    DECODERS: List[Decoder] = []
-    ENCODERS: List[Encoder] = []
+    ONTCIJFERAARS: List[Ontcijferaar] = []
+    VERCIJFERAARS: List[Vercijferaar] = []
     ENUMS: Dict[str, Enum] = ENUMS
     
     def __getattr__(self, naam):
@@ -144,9 +145,9 @@ class Register(dict, metaclass = Singleton):
                 
                 geregistreerde_objecten = openen_json(
                     bestandspad = bestandspad,
-                    decoder_object = class_dict["decoder"],
-                    decoder_subobjecten = cls.DECODERS,
-                    enum_dict = ENUMS,
+                    ontcijfer_functie_object = class_dict["ontcijferaar"],
+                    ontcijfer_functie_subobjecten = cls.ONTCIJFERAARS,
+                    ontcijfer_enum = ENUMS,
                     )
                 
                 for uuid, geregistreerd_object in geregistreerde_objecten.items():
@@ -169,9 +170,9 @@ class Register(dict, metaclass = Singleton):
             opslaan_json(
                 self[class_naam],
                 bestandspad,
-                encoder_object = class_dict["encoder"],
-                encoder_subobjecten = self.ENCODERS,
-                enum_dict = ENUMS,
+                vercijfer_functie_object = class_dict["vercijferaar"],
+                vercijfer_functie_subobjecten = self.VERCIJFERAARS,
+                vercijfer_enum = ENUMS,
                 )
 
 class GeregistreerdObjectMeta(type):
@@ -241,12 +242,12 @@ class GeregistreerdObject(metaclass = GeregistreerdObjectMeta):
         for veld, _type in velden.items():
             
             if isinstance(_type, type) and issubclass(_type, Enum):
-                waarde = invoer_kiezen(
+                waarde = kiezen(
                     beschrijving = veld,
                     keuzes = {enum.value: enum for enum in _type},
                     )
             elif _type in (int, float, str):
-                waarde = invoer_validatie(
+                waarde = invoeren(
                     beschrijving = veld,
                     type = _type,
                     )

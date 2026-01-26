@@ -6,7 +6,7 @@ from mjolnir.kern import CONFIG, Register, GeregistreerdObject
 from mjolnir.kern.enums import OefeningType, GewichtType, Oefening, Status, SetGroepType
 from mjolnir.schema.sjabloon import Sjabloon
 
-from grienetsiis import invoer_validatie, invoer_kiezen
+from grienetsiis.opdrachtprompt import invoeren, kiezen
 
 
 @dataclass
@@ -62,7 +62,7 @@ class Schema(GeregistreerdObject):
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                     
-                    if invoer_kiezen(
+                    if kiezen(
                         beschrijving = "nog een oefening toevoegen?",
                         keuzes = {"ja": False, "nee": True},
                         kies_een = False,
@@ -70,12 +70,12 @@ class Schema(GeregistreerdObject):
                         
                         break
                 
-                oefening_type = invoer_kiezen(
+                oefening_type = kiezen(
                     beschrijving = "oefeningstype",
                     keuzes = {oefening_type.naam: oefening_type for oefening_type in OefeningType},
                     )
                 
-                oefening = invoer_kiezen(
+                oefening = kiezen(
                     beschrijving = "oefening",
                     keuzes = {oefening.naam: oefening for oefening in Oefening if oefening.oefening_type == oefening_type},
                     )
@@ -94,7 +94,7 @@ class Schema(GeregistreerdObject):
                         for sjabloon_uuid in oefening_sjablonen["sjablonen"]:
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                         
-                        if invoer_kiezen(
+                        if kiezen(
                             beschrijving = "nog een sjabloon toevoegen?",
                             keuzes = {"ja": False, "nee": True},
                             kies_een = False,
@@ -102,7 +102,7 @@ class Schema(GeregistreerdObject):
                             
                             break
                     
-                    setgroep_type = invoer_kiezen(
+                    setgroep_type = kiezen(
                         beschrijving = "setgroep",
                         keuzes = {setgroep_type.value: setgroep_type for setgroep_type in SetGroepType},
                         )
@@ -122,7 +122,7 @@ class Schema(GeregistreerdObject):
                         
                             print(f"\ntrainingsgewicht nodig voor oefening \"{oefening.naam}\"")
                             
-                            trainingsgewicht = invoer_validatie(
+                            trainingsgewicht = invoeren(
                                 beschrijving = "trainingsgewicht",
                                 type = float,
                                 bereik = (0.0, CONFIG["GEWICHT_AANTAL_MAX"]),

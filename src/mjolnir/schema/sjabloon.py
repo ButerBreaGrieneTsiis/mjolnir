@@ -4,7 +4,7 @@ from typing import ClassVar, Dict, List
 from mjolnir.kern import CONFIG, GeregistreerdObject, Setcode
 from mjolnir.kern.enums import RepetitieType, GewichtType, SetType, SetGroepType
 
-from grienetsiis import invoer_validatie, invoer_kiezen
+from grienetsiis.opdrachtprompt import invoeren, kiezen
 
 
 @dataclass
@@ -44,7 +44,7 @@ class Sjabloon(GeregistreerdObject):
                     print("\nde huidige sets:")
                     [print(f"  {setcode}") for setcode in setcodes]
                     
-                    if invoer_kiezen(
+                    if kiezen(
                         beschrijving = "nog een set toevoegen?",
                         keuzes = {"ja": False, "nee": True},
                         kies_een = False,
@@ -58,55 +58,55 @@ class Sjabloon(GeregistreerdObject):
                     }
                 
                 if set_type == SetType.AANTAL:
-                    setcode_dict["set_aantal"] = invoer_validatie(
+                    setcode_dict["set_aantal"] = invoeren(
                         beschrijving = "aantal sets",
                         type = int,
                         bereik = (1, CONFIG["SET_AANTAL_MAX"]),
                         )
                 elif set_type == SetType.AMSAP:
-                    setcode_dict["set_aantal"] = invoer_validatie(
+                    setcode_dict["set_aantal"] = invoeren(
                         beschrijving = "minimaal aantal sets",
                         type = int,
                         bereik = (1, CONFIG["SET_AANTAL_MAX"]),
                         )
                 
-                setcode_dict["repetitie_type"] = invoer_kiezen(
+                setcode_dict["repetitie_type"] = kiezen(
                     beschrijving = "repetitie type",
                     keuzes = {repetitie_type.value: repetitie_type for repetitie_type in RepetitieType},
                     )
                 
                 if setcode_dict["repetitie_type"] == RepetitieType.AANTAL:
-                    setcode_dict["repetitie_aantal"] = invoer_validatie(
+                    setcode_dict["repetitie_aantal"] = invoeren(
                         beschrijving = "aantal repetities",
                         type = int,
                         bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
                 elif setcode_dict["repetitie_type"] == RepetitieType.AMRAP:
-                    setcode_dict["repetitie_aantal"] = invoer_validatie(
+                    setcode_dict["repetitie_aantal"] = invoeren(
                         beschrijving = "minimaal aantal repetities",
                         type = int,
                         bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
                 elif setcode_dict["repetitie_type"] in (RepetitieType.BEREIK, RepetitieType.BEREIK_AMRAP):
-                    setcode_dict["repetitie_aantal"] = invoer_validatie(
+                    setcode_dict["repetitie_aantal"] = invoeren(
                         beschrijving = "minimaal aantal repetities",
                         type = int,
                         bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
-                    setcode_dict["repetitie_maximaal"] = invoer_validatie(
+                    setcode_dict["repetitie_maximaal"] = invoeren(
                         beschrijving = "maximaal aantal repetities",
                         type = int,
                         bereik = (setcode_dict["repetitie_aantal"] + 1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
                 
                 if gewicht_type == GewichtType.GEWICHT:
-                    setcode_dict["gewicht_aantal"] = invoer_validatie(
+                    setcode_dict["gewicht_aantal"] = invoeren(
                         beschrijving = "hoeveel gewicht",
                         type = float,
                         bereik = (0.0, CONFIG["GEWICHT_AANTAL_MAX"]),
                         )
                 elif gewicht_type == GewichtType.PERCENTAGE:
-                    setcode_dict["gewicht_aantal"] = invoer_validatie(
+                    setcode_dict["gewicht_aantal"] = invoeren(
                         beschrijving = "hoeveel percent",
                         type = float,
                         bereik = (0.0, 100.0),
@@ -117,7 +117,7 @@ class Sjabloon(GeregistreerdObject):
                 
             return setcodes
         
-        weken = invoer_kiezen(
+        weken = kiezen(
             beschrijving = "hoeveel weken heeft dit sjabloon?",
             keuzes = {
                 "weekonafhankelijk": 0,
