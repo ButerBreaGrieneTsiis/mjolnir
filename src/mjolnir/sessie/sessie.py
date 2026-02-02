@@ -7,13 +7,15 @@ import os
 import psutil
 from typing import Any, Dict, List
 
+from grienetsiis.register import Register
 import streamlit as st
 
-from mjolnir.kern import CONFIG, Register, Setcode
+from mjolnir.kern import CONFIG, Setcode
 from mjolnir.kern.enums import Oefening, GewichtType, HalterType, RepetitieType, SetType, SetGroepType, Status
 from mjolnir.sessie import Halter
 from mjolnir.resultaat import ResultaatOefening, Resultaat
 from .functies import st_horizontaal
+
 
 locale.setlocale(locale.LC_ALL, "nl_NL.UTF-8")
 

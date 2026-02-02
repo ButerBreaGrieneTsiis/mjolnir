@@ -7,8 +7,8 @@ from typing import Any, Callable, ClassVar, Dict, List, TYPE_CHECKING
 
 from grienetsiis.json import Ontcijferaar, Vercijferaar, opslaan_json, openen_json
 from grienetsiis.gereedschap import formatteer_getal
+from grienetsiis.register import Register
 
-from mjolnir.kern import Register
 from mjolnir.kern.enums import Oefening, GewichtType, Status, ENUMS
 
 

@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import ClassVar, Dict, List
 
-from mjolnir.kern import CONFIG, GeregistreerdObject, Setcode
-from mjolnir.kern.enums import RepetitieType, GewichtType, SetType, SetGroepType
-
 from grienetsiis.opdrachtprompt import invoeren, kiezen
+from grienetsiis.register import GeregistreerdObject
+
+from mjolnir.kern import CONFIG, Setcode
+from mjolnir.kern.enums import RepetitieType, GewichtType, SetType, SetGroepType
 
 
 @dataclass
@@ -45,9 +46,9 @@ class Sjabloon(GeregistreerdObject):
                     [print(f"  {setcode}") for setcode in setcodes]
                     
                     if kiezen(
-                        beschrijving = "nog een set toevoegen?",
-                        keuzes = {"ja": False, "nee": True},
-                        kies_een = False,
+                        opties = {"ja": False, "nee": True},
+                        tekst_beschrijving = "nog een set toevoegen?",
+                        tekst_kies_een = False,
                         ):
                         
                         break
@@ -59,57 +60,57 @@ class Sjabloon(GeregistreerdObject):
                 
                 if set_type == SetType.AANTAL:
                     setcode_dict["set_aantal"] = invoeren(
-                        beschrijving = "aantal sets",
-                        type = int,
-                        bereik = (1, CONFIG["SET_AANTAL_MAX"]),
+                        tekst_beschrijving = "aantal sets",
+                        invoer_type = int,
+                        waardes_bereik = (1, CONFIG["SET_AANTAL_MAX"]),
                         )
                 elif set_type == SetType.AMSAP:
                     setcode_dict["set_aantal"] = invoeren(
-                        beschrijving = "minimaal aantal sets",
-                        type = int,
-                        bereik = (1, CONFIG["SET_AANTAL_MAX"]),
+                        tekst_beschrijving = "minimaal aantal sets",
+                        invoer_type = int,
+                        waardes_bereik = (1, CONFIG["SET_AANTAL_MAX"]),
                         )
                 
                 setcode_dict["repetitie_type"] = kiezen(
-                    beschrijving = "repetitie type",
-                    keuzes = {repetitie_type.value: repetitie_type for repetitie_type in RepetitieType},
+                    opties = {repetitie_type.value: repetitie_type for repetitie_type in RepetitieType},
+                    tekst_beschrijving = "repetitie type",
                     )
                 
                 if setcode_dict["repetitie_type"] == RepetitieType.AANTAL:
                     setcode_dict["repetitie_aantal"] = invoeren(
-                        beschrijving = "aantal repetities",
-                        type = int,
-                        bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
+                        tekst_beschrijving = "aantal repetities",
+                        invoer_type = int,
+                        waardes_bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
                 elif setcode_dict["repetitie_type"] == RepetitieType.AMRAP:
                     setcode_dict["repetitie_aantal"] = invoeren(
-                        beschrijving = "minimaal aantal repetities",
-                        type = int,
-                        bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
+                        tekst_beschrijving = "minimaal aantal repetities",
+                        invoer_type = int,
+                        waardes_bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
                 elif setcode_dict["repetitie_type"] in (RepetitieType.BEREIK, RepetitieType.BEREIK_AMRAP):
                     setcode_dict["repetitie_aantal"] = invoeren(
-                        beschrijving = "minimaal aantal repetities",
-                        type = int,
-                        bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
+                        tekst_beschrijving = "minimaal aantal repetities",
+                        invoer_type = int,
+                        waardes_bereik = (1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
                     setcode_dict["repetitie_maximaal"] = invoeren(
-                        beschrijving = "maximaal aantal repetities",
-                        type = int,
-                        bereik = (setcode_dict["repetitie_aantal"] + 1, CONFIG["REPETITIE_AANTAL_MAX"]),
+                        tekst_beschrijving = "maximaal aantal repetities",
+                        invoer_type = int,
+                        waardes_bereik = (setcode_dict["repetitie_aantal"] + 1, CONFIG["REPETITIE_AANTAL_MAX"]),
                         )
                 
                 if gewicht_type == GewichtType.GEWICHT:
                     setcode_dict["gewicht_aantal"] = invoeren(
-                        beschrijving = "hoeveel gewicht",
-                        type = float,
-                        bereik = (0.0, CONFIG["GEWICHT_AANTAL_MAX"]),
+                        tekst_beschrijving = "hoeveel gewicht",
+                        invoer_type = float,
+                        waardes_bereik = (0.0, CONFIG["GEWICHT_AANTAL_MAX"]),
                         )
                 elif gewicht_type == GewichtType.PERCENTAGE:
                     setcode_dict["gewicht_aantal"] = invoeren(
-                        beschrijving = "hoeveel percent",
-                        type = float,
-                        bereik = (0.0, 100.0),
+                        tekst_beschrijving = "hoeveel percent",
+                        invoer_type = float,
+                        waardes_bereik = (0.0, 100.0),
                         )
                 
                 setcode = Setcode(**setcode_dict)
@@ -118,13 +119,13 @@ class Sjabloon(GeregistreerdObject):
             return setcodes
         
         weken = kiezen(
-            beschrijving = "hoeveel weken heeft dit sjabloon?",
-            keuzes = {
+            opties = {
                 "weekonafhankelijk": 0,
                 "1 week": 1,
                 "2 weken": 2,
                 "3 weken": 3,
                 },
+            tekst_beschrijving = "hoeveel weken heeft dit sjabloon?",
             )
         
         setcodes_per_week = {}

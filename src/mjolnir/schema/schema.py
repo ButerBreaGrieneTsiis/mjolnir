@@ -2,11 +2,12 @@ from dataclasses import dataclass
 import datetime as dt
 from typing import ClassVar, Dict, List
 
-from mjolnir.kern import CONFIG, Register, GeregistreerdObject
+from grienetsiis.opdrachtprompt import invoeren, kiezen
+from grienetsiis.register import Register, GeregistreerdObject
+
+from mjolnir.kern import CONFIG
 from mjolnir.kern.enums import OefeningType, GewichtType, Oefening, Status, SetGroepType
 from mjolnir.schema.sjabloon import Sjabloon
-
-from grienetsiis.opdrachtprompt import invoeren, kiezen
 
 
 @dataclass
@@ -63,24 +64,22 @@ class Schema(GeregistreerdObject):
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                     
                     if kiezen(
-                        beschrijving = "nog een oefening toevoegen?",
-                        keuzes = {"ja": False, "nee": True},
-                        kies_een = False,
+                        opties = {"ja": False, "nee": True},
+                        tekst_beschrijving = "nog een oefening toevoegen?",
+                        tekst_kies_een = False,
                         ):
                         
                         break
                 
                 oefening_type = kiezen(
-                    beschrijving = "oefeningstype",
-                    keuzes = {oefening_type.naam: oefening_type for oefening_type in OefeningType},
+                    opties = {oefening_type.naam: oefening_type for oefening_type in OefeningType},
+                    tekst_beschrijving = "oefeningstype",
                     )
                 
                 oefening = kiezen(
-                    beschrijving = "oefening",
-                    keuzes = {oefening.naam: oefening for oefening in Oefening if oefening.oefening_type == oefening_type},
+                    opties = {oefening.naam: oefening for oefening in Oefening if oefening.oefening_type == oefening_type},
+                    tekst_beschrijving = "oefening",
                     )
-                
-                print(f"\n>>> oefening \"{oefening.naam}\" gekozen")
                 
                 oefening_sjablonen = {
                     "oefening": oefening,
@@ -95,16 +94,16 @@ class Schema(GeregistreerdObject):
                             print(f"    {Register().sjablonen[sjabloon_uuid]}")
                         
                         if kiezen(
-                            beschrijving = "nog een sjabloon toevoegen?",
-                            keuzes = {"ja": False, "nee": True},
-                            kies_een = False,
+                            opties = {"ja": False, "nee": True},
+                            tekst_beschrijving = "nog een sjabloon toevoegen?",
+                            tekst_kies_een = False,
                             ):
                             
                             break
                     
                     setgroep_type = kiezen(
-                        beschrijving = "setgroep",
-                        keuzes = {setgroep_type.value: setgroep_type for setgroep_type in SetGroepType},
+                        opties = {setgroep_type.value: setgroep_type for setgroep_type in SetGroepType},
+                        tekst_beschrijving = "setgroep",
                         )
                     
                     sjabloon_uuid = Register().sjablonen.filter(
@@ -123,9 +122,9 @@ class Schema(GeregistreerdObject):
                             print(f"\ntrainingsgewicht nodig voor oefening \"{oefening.naam}\"")
                             
                             trainingsgewicht = invoeren(
-                                beschrijving = "trainingsgewicht",
-                                type = float,
-                                bereik = (0.0, CONFIG["GEWICHT_AANTAL_MAX"]),
+                                tekst_beschrijving = "trainingsgewicht",
+                                invoer_type = float,
+                                waardes_bereik = (0.0, CONFIG["GEWICHT_AANTAL_MAX"]),
                                 )
                             
                             trainingsgewichten.append({

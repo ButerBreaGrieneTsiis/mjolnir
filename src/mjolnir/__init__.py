@@ -1,9 +1,13 @@
 """
 Mjölnir
 """
-from grienetsiis.json import Ontcijferaar, Vercijferaar
+from pathlib import Path
 
-from mjolnir.kern import Register, Setcode
+from grienetsiis.json import Ontcijferaar, Vercijferaar
+from grienetsiis.register import Register
+
+from mjolnir.kern import Setcode
+from mjolnir.kern.enums import ENUMS
 from mjolnir.schema import Schema, Sjabloon
 from mjolnir.sessie import Halterstang, Halterschijf, programma_sessie
 
@@ -15,33 +19,62 @@ __all__ = [
 
 __version__ = "0.1.0-dev"
 
-Register.TYPES["halterstangen"] = {
-    "type": Halterstang,
-    "ontcijferaar": Halterstang.van_json,
-    "vercijferaar": Halterstang.naar_json,
-    }
-Register.TYPES["halterschijven"] = {
-    "type": Halterschijf,
-    "ontcijferaar": Halterschijf.van_json,
-    "vercijferaar": Halterschijf.naar_json,
-    }
-Register.TYPES["schema"] = {
-    "type": Schema,
-    "ontcijferaar": Schema.van_json,
-    "vercijferaar": Schema.naar_json,
-    }
-Register.TYPES["sjablonen"] = {
-    "type": Sjabloon,
-    "ontcijferaar": Sjabloon.van_json,
-    "vercijferaar": Sjabloon.naar_json,
-    }
-Register.ONTCIJFERAARS.append(Ontcijferaar(
-    ontcijfer_functie = Setcode.van_json,
-    velden = frozenset((
-        "__setcode__",
-        )),
-    ))
-Register.VERCIJFERAARS.append(Vercijferaar(
-    class_naam = "Setcode",
-    vercijfer_functie_naam = "naar_json",
-    ))
+Register.instellen(
+    registratie_methode = "uuid",
+    bestandsmap = Path("gegevens"),
+    )
+
+Register.registreer_type(
+    geregistreerd_type = Halterstang,
+    subregister_naam = "halterstangen",
+    bestandsmap = Path("gegevens"),
+    bestandsnaam = "halterstangen",
+    vercijfer_methode = "functie",
+    vercijfer_functie_objecten = Halterstang.naar_json,
+    ontcijfer_functie_objecten = Halterstang.van_json,
+    enums = ENUMS,
+    )
+Register.registreer_type(
+    geregistreerd_type = Halterschijf,
+    subregister_naam = "halterschijven",
+    bestandsmap = Path("gegevens"),
+    bestandsnaam = "halterschijven",
+    vercijfer_methode = "functie",
+    vercijfer_functie_objecten = Halterschijf.naar_json,
+    ontcijfer_functie_objecten = Halterschijf.van_json,
+    enums = ENUMS,
+    )
+Register.registreer_type(
+    geregistreerd_type = Schema,
+    subregister_naam = "schema",
+    bestandsmap = Path("gegevens"),
+    bestandsnaam = "schema",
+    vercijfer_methode = "functie",
+    vercijfer_functie_objecten = Schema.naar_json,
+    ontcijfer_functie_objecten = Schema.van_json,
+    enums = ENUMS,
+    )
+Register.registreer_type(
+    geregistreerd_type = Sjabloon,
+    subregister_naam = "sjablonen",
+    bestandsmap = Path("gegevens"),
+    bestandsnaam = "sjablonen",
+    vercijfer_methode = "functie",
+    vercijfer_functie_objecten = Sjabloon.naar_json,
+    ontcijfer_functie_objecten = Sjabloon.van_json,
+    vercijfer_functie_subobjecten = [
+        Vercijferaar(
+            class_naam = "Setcode",
+            vercijfer_functie_naam = "naar_json",
+            ),
+        ],
+    ontcijfer_functie_subobjecten = [
+        Ontcijferaar(
+            velden = frozenset((
+                "__setcode__",
+                )),
+            ontcijfer_functie = Setcode.van_json,
+            ),
+        ],
+    enums = ENUMS,
+    )
