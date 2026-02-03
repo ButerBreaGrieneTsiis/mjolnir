@@ -1,3 +1,5 @@
+"""mjolnir.sessie.halter.halterstang"""
+from __future__ import annotations
 from dataclasses import dataclass
 from itertools import permutations, product
 from typing import ClassVar, List
@@ -5,21 +7,9 @@ from typing import ClassVar, List
 from grienetsiis.register import GeregistreerdObject
 
 from mjolnir.kern.enums import HalterType
+from mjolnir.sessie.halter import Halterschijf, Halter
 
 
-@dataclass
-class Halterschijf(GeregistreerdObject):
-    
-    massa: float
-    diameter: int
-    aantal: int
-    breedte: int
-    
-    BESTANDSNAAM: ClassVar[str] = "halterschijven"
-    
-    def __repr__(self) -> str:
-        return f"halterschijf {self.massa} kg Ø{self.diameter}"
-    
 @dataclass
 class Halterstang(GeregistreerdObject):
     
@@ -29,7 +19,7 @@ class Halterstang(GeregistreerdObject):
     diameter: int
     opname_breedte: int
     
-    BESTANDSNAAM: ClassVar[str] = "halterstangen"
+    _SUBREGISTER_NAAM: ClassVar[str] = "halterstangen"
     
     def __repr__(self) -> str:
         return f"halterstang \"{self.naam}\" van type \"{self.halter_type.value}\""
@@ -137,7 +127,7 @@ class Halterstang(GeregistreerdObject):
         self,
         gewicht: float,
         halterschijven: List[Halterschijf],
-        ) -> "Halter":
+        ) -> Halter:
         
         halterschijf_min = min(halterschijf.massa for halterschijf in halterschijven)
         
@@ -159,22 +149,3 @@ class Halterstang(GeregistreerdObject):
             halterschijven_kant,
             halterschijven_kant,
             )
-
-@dataclass
-class Halter: 
-    
-    halterstang: Halterstang
-    halterschijven_links: List[Halterschijf] = None
-    halterschijven_rechts: List[Halterschijf] = None
-    
-    def __repr__(self):
-        links = "".join([f"[{halterschijf.massa}]" for halterschijf in reversed(self.halterschijven_links)])
-        rechts = "".join([f"[{halterschijf.massa}]" for halterschijf in self.halterschijven_rechts])
-        return f"{links}---[{self.halterstang.naam}]---{rechts}"
-    
-    @property
-    def massa(self) -> float:
-        
-        return self.halterstang.massa + \
-            sum([halterschijf.massa for halterschijf in self.halterschijven_links]) + \
-            sum([halterschijf.massa for halterschijf in self.halterschijven_rechts])

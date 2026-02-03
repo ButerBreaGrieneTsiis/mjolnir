@@ -1,3 +1,5 @@
+"""mjolnir.kern.setcode"""
+from __future__ import annotations
 from typing import Dict, Tuple
 
 from .config import CONFIG
@@ -5,6 +7,8 @@ from .enums import GewichtType, RepetitieType, SetType
 
 
 class Setcode:
+    
+    # DUNDER METHODS
     
     def __init__(
         self,
@@ -15,7 +19,7 @@ class Setcode:
         repetitie_aantal: int = 5,
         repetitie_maximaal: int = CONFIG["REPETITIE_AANTAL_MAX"],
         gewicht_aantal: float | int | None = 100,
-        ) -> "Setcode":
+        ) -> Setcode:
         
         self.set_type = set_type
         self.repetitie_type = repetitie_type
@@ -31,11 +35,13 @@ class Setcode:
     def __str__(self) -> str:
         return self.tekst
     
+    # CLASS METHODS
+    
     @classmethod
     def van_tekst(
         cls,
         tekst: str,
-        ) -> "Setcode":
+        ) -> Setcode:
         
         setcode = cls()
         setcode.tekst = tekst
@@ -46,12 +52,16 @@ class Setcode:
     def van_json(
         cls,
         **dict,
-        ) -> "Setcode":
+        ) -> Setcode:
         
         return cls.van_tekst(dict["__setcode__"])
     
+    # INSTANCE METHODS
+    
     def naar_json(self) -> Dict[str, str]:
         return {"__setcode__": self.tekst}
+    
+    # PROPERTIES
     
     @property
     def tekst(self) -> str:
@@ -103,93 +113,6 @@ class Setcode:
         self._repetitie_type = _repetitie_type
         self._gewicht_aantal = _gewicht_aantal
         self._gewicht_type = _gewicht_type
-    
-    @staticmethod
-    def _setcode_van_waardes(
-        set_type: SetType,
-        repetitie_type: RepetitieType,
-        gewicht_type: GewichtType,
-        set_aantal: int | None,
-        repetitie_aantal: int | None,
-        repetitie_maximaal: int,
-        gewicht_aantal: float,
-        ) -> str:
-        
-        if set_type == SetType.VRIJ:
-            set_tekst = "?"
-        elif set_type == SetType.AANTAL:
-            set_tekst = f"{set_aantal}"
-        else:
-            set_tekst = f"{set_aantal}+"
-        
-        if repetitie_type == RepetitieType.VRIJ:
-            repetitie_tekst = "?"
-        elif repetitie_type == RepetitieType.AANTAL:
-            repetitie_tekst = f"{repetitie_aantal}"
-        elif repetitie_type == RepetitieType.AMRAP:
-            repetitie_tekst = f"{repetitie_aantal}+"
-        elif repetitie_type == RepetitieType.BEREIK:
-            repetitie_tekst = f"{repetitie_aantal}-{repetitie_maximaal}"
-        else:
-            repetitie_tekst = f"{repetitie_aantal}-{repetitie_maximaal}+"
-        
-        if gewicht_type == GewichtType.GEWICHTLOOS:
-            if set_tekst == "1":
-                return f"{repetitie_tekst}"
-            return f"{set_tekst}x{repetitie_tekst}"
-        elif gewicht_type == GewichtType.VRIJ:
-            gewicht_tekst = "?"
-        elif gewicht_type == GewichtType.GEWICHT:
-            gewicht_tekst = f"{gewicht_aantal}"
-        else:
-            gewicht_tekst = f"{gewicht_aantal * 100:.0f}%"
-        
-        if set_tekst == "1":
-            return f"{repetitie_tekst}@{gewicht_tekst}"
-        return f"{set_tekst}x{repetitie_tekst}@{gewicht_tekst}"
-    
-    @staticmethod
-    def _sets_set_type(tekst: str) -> Tuple[int, SetType]:
-        
-        if "x" in tekst:
-            set_tekst = tekst.split("x")[0]
-            if "?" in set_tekst:
-                return (0, SetType.VRIJ)
-            if "+" in set_tekst:
-                return (int(set_tekst.replace("+", "")), SetType.AMSAP)
-            return (int(set_tekst), SetType.AANTAL)
-        
-        return (1, SetType.AANTAL)
-    
-    @staticmethod
-    def _repetities_repetitie_type(tekst: str) -> Tuple[int, int, RepetitieType]:
-        
-        if "x" in tekst:
-            repetitie_tekst = tekst.split("x")[1].split("@")[0]
-        else:
-            repetitie_tekst = tekst.split("@")[0]
-        
-        if "?" in repetitie_tekst:
-            return (0, CONFIG["REPETITIE_AANTAL_MAX"], RepetitieType.VRIJ)
-        if "-" in repetitie_tekst and "+" in repetitie_tekst:
-            return (int(repetitie_tekst.split("-")[0]), int(repetitie_tekst.split("-")[1].replace("+", "")), RepetitieType.BEREIK_AMRAP)
-        if "-" in repetitie_tekst:
-            return (int(repetitie_tekst.split("-")[0]), int(repetitie_tekst.split("-")[1]), RepetitieType.BEREIK)
-        if "+" in repetitie_tekst:
-            return (int(repetitie_tekst.replace("+", "")), CONFIG["REPETITIE_AANTAL_MAX"], RepetitieType.AMRAP)
-        return (int(repetitie_tekst), int(repetitie_tekst), RepetitieType.AANTAL)
-    
-    @staticmethod
-    def _gewicht_gewicht_type(tekst: str) -> Tuple[float | None, GewichtType]:
-        
-        if "@" in tekst:
-            gewicht_tekst = tekst.split("@")[1]
-            if "?" in gewicht_tekst:
-                return (0.0, GewichtType.VRIJ)
-            if "%" in gewicht_tekst:
-                return (int(gewicht_tekst.replace("%", "")), GewichtType.PERCENTAGE)
-            return (int(gewicht_tekst), GewichtType.GEWICHT)
-        return (None, GewichtType.GEWICHTLOOS)
     
     @property
     def set_aantal(self) -> int:
@@ -292,3 +215,92 @@ class Setcode:
         if "@" in self.tekst:
             return self.tekst.split("@")[1]
         return ""
+    
+    # STATIC METHODS
+    
+    @staticmethod
+    def _setcode_van_waardes(
+        set_type: SetType,
+        repetitie_type: RepetitieType,
+        gewicht_type: GewichtType,
+        set_aantal: int | None,
+        repetitie_aantal: int | None,
+        repetitie_maximaal: int,
+        gewicht_aantal: float,
+        ) -> str:
+        
+        if set_type == SetType.VRIJ:
+            set_tekst = "?"
+        elif set_type == SetType.AANTAL:
+            set_tekst = f"{set_aantal}"
+        else:
+            set_tekst = f"{set_aantal}+"
+        
+        if repetitie_type == RepetitieType.VRIJ:
+            repetitie_tekst = "?"
+        elif repetitie_type == RepetitieType.AANTAL:
+            repetitie_tekst = f"{repetitie_aantal}"
+        elif repetitie_type == RepetitieType.AMRAP:
+            repetitie_tekst = f"{repetitie_aantal}+"
+        elif repetitie_type == RepetitieType.BEREIK:
+            repetitie_tekst = f"{repetitie_aantal}-{repetitie_maximaal}"
+        else:
+            repetitie_tekst = f"{repetitie_aantal}-{repetitie_maximaal}+"
+        
+        if gewicht_type == GewichtType.GEWICHTLOOS:
+            if set_tekst == "1":
+                return f"{repetitie_tekst}"
+            return f"{set_tekst}x{repetitie_tekst}"
+        elif gewicht_type == GewichtType.VRIJ:
+            gewicht_tekst = "?"
+        elif gewicht_type == GewichtType.GEWICHT:
+            gewicht_tekst = f"{gewicht_aantal}"
+        else:
+            gewicht_tekst = f"{gewicht_aantal * 100:.0f}%"
+        
+        if set_tekst == "1":
+            return f"{repetitie_tekst}@{gewicht_tekst}"
+        return f"{set_tekst}x{repetitie_tekst}@{gewicht_tekst}"
+    
+    @staticmethod
+    def _sets_set_type(tekst: str) -> Tuple[int, SetType]:
+        
+        if "x" in tekst:
+            set_tekst = tekst.split("x")[0]
+            if "?" in set_tekst:
+                return (0, SetType.VRIJ)
+            if "+" in set_tekst:
+                return (int(set_tekst.replace("+", "")), SetType.AMSAP)
+            return (int(set_tekst), SetType.AANTAL)
+        
+        return (1, SetType.AANTAL)
+    
+    @staticmethod
+    def _repetities_repetitie_type(tekst: str) -> Tuple[int, int, RepetitieType]:
+        
+        if "x" in tekst:
+            repetitie_tekst = tekst.split("x")[1].split("@")[0]
+        else:
+            repetitie_tekst = tekst.split("@")[0]
+        
+        if "?" in repetitie_tekst:
+            return (0, CONFIG["REPETITIE_AANTAL_MAX"], RepetitieType.VRIJ)
+        if "-" in repetitie_tekst and "+" in repetitie_tekst:
+            return (int(repetitie_tekst.split("-")[0]), int(repetitie_tekst.split("-")[1].replace("+", "")), RepetitieType.BEREIK_AMRAP)
+        if "-" in repetitie_tekst:
+            return (int(repetitie_tekst.split("-")[0]), int(repetitie_tekst.split("-")[1]), RepetitieType.BEREIK)
+        if "+" in repetitie_tekst:
+            return (int(repetitie_tekst.replace("+", "")), CONFIG["REPETITIE_AANTAL_MAX"], RepetitieType.AMRAP)
+        return (int(repetitie_tekst), int(repetitie_tekst), RepetitieType.AANTAL)
+    
+    @staticmethod
+    def _gewicht_gewicht_type(tekst: str) -> Tuple[float | None, GewichtType]:
+        
+        if "@" in tekst:
+            gewicht_tekst = tekst.split("@")[1]
+            if "?" in gewicht_tekst:
+                return (0.0, GewichtType.VRIJ)
+            if "%" in gewicht_tekst:
+                return (int(gewicht_tekst.replace("%", "")), GewichtType.PERCENTAGE)
+            return (int(gewicht_tekst), GewichtType.GEWICHT)
+        return (None, GewichtType.GEWICHTLOOS)

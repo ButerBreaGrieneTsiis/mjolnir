@@ -1,3 +1,5 @@
+"""mjolnir.schema.sjabloon"""
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar, Dict, List
 
@@ -18,10 +20,14 @@ class Sjabloon(GeregistreerdObject):
     weken: int = 0
     setcodes: Dict[str, List[Setcode]] | None = None
     
-    BESTANDSNAAM: ClassVar[str] = "sjablonen"
+    _SUBREGISTER_NAAM: ClassVar[str] = "sjablonen"
+    
+    # DUNDER METHODS
     
     def __repr__(self) -> str:
         return f"{self.naam} (setgroep \"{self.setgroep_type.value}\", gewichttype \"{self.gewicht_type.value}\")"
+    
+    # CLASS METHODS
     
     @classmethod
     def nieuw(

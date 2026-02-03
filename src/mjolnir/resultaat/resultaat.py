@@ -1,3 +1,4 @@
+"""mjolnir.resultaat.resultaat"""
 from __future__ import annotations
 from dataclasses import dataclass
 import datetime as dt
@@ -5,190 +6,102 @@ from pathlib import Path
 import re
 from typing import Any, Callable, ClassVar, Dict, List, TYPE_CHECKING
 
-from grienetsiis.json import Ontcijferaar, Vercijferaar, opslaan_json, openen_json
 from grienetsiis.gereedschap import formatteer_getal
+from grienetsiis.json import opslaan_json, openen_json
 from grienetsiis.register import Register
 
-from mjolnir.kern.enums import Oefening, GewichtType, Status, ENUMS
-
+from mjolnir.kern.enums import Oefening, Status, ENUMS
+from mjolnir.resultaat import ResultaatSet, ResultaatOefening
 
 if TYPE_CHECKING:
-    from mjolnir.sessie.sessie import Sessie, SessieOefening, SessieSet
+    from mjolnir.sessie.sessie import Sessie
+
 
 @dataclass
-class ResultaatSet:
+class Resultaat:
     
-    repetities: int
-    repetities_links: int | None = None
-    gewicht: float | None = None
+    schema_uuid: str
+    week: int
+    dag: int
+    datum: dt.date
+    oefeningen: List[ResultaatOefening]
     
-    ONTCIJFERAAR: ClassVar[Ontcijferaar | None] = None
-    VERCIJFERAAR: ClassVar[Vercijferaar | None] = None
+    ONTCIJFERAAR_FUNCTIE: ClassVar[Callable | None] = None
+    VERCIJFERAAR_FUNCTIE: ClassVar[Callable | None] = None
+    
+    # CLASS METHODS
     
     @classmethod
     def van_sessie(
         cls,
-        sessie_set: "SessieSet",
-        ) -> "ResultaatSet":
+        sessie: Sessie,
+        ) -> Resultaat:
         
-        repetities_links = sessie_set.repetitie_links_gedaan if sessie_set.oefening.dextraal else None
-        gewicht_gedaan = None if sessie_set.gewicht_type == GewichtType.GEWICHTLOOS else sessie_set.gewicht_gedaan
+        oefeningen = []
+        
+        for sessie_oefening in sessie.oefeningen:
+            if any(sessie_set.status == Status.AFGEROND and sessie_set.repetitie_gedaan > 0 for sessie_setgroep in sessie_oefening.sets.values() for sessie_set in sessie_setgroep):
+                resultaat_oefening = ResultaatOefening.van_sessie(sessie_oefening)
+                oefeningen.append(resultaat_oefening)
         
         return cls(
-            repetities = sessie_set.repetitie_gedaan,
-            repetities_links = repetities_links,
-            gewicht = gewicht_gedaan,
+            schema_uuid = sessie.schema_uuid,
+            week = sessie.week,
+            dag = sessie.dag,
+            datum = sessie.datum,
+            oefeningen = oefeningen,
             )
     
     @classmethod
     def van_json(
         cls,
         **dict,
-        ) -> "ResultaatOefening":
+        ) -> Resultaat:
         
         return cls(**dict)
     
-    def naar_json(self) -> Dict[str, Any]:
-        return {veld: waarde for veld, waarde in self.__dict__.items() if waarde is not None}
-    
-    def _tekst(self, links: bool = False) -> str:
-        
-        repetitie_veld = "repetities_links" if links else "repetities"
-        
-        if self.gewicht is None:
-            return f"{getattr(self, repetitie_veld)}"
-        
-        gewicht_tekst = f"{self.gewicht:.2f}"
-        if gewicht_tekst[-2:] == "00":
-            return f"{getattr(self, repetitie_veld)}@{gewicht_tekst[:-3]}"
-        if gewicht_tekst[-1] == "0":
-            return f"{getattr(self, repetitie_veld)}@{gewicht_tekst[:-1]}"
-        return f"{getattr(self, repetitie_veld)}@{gewicht_tekst}"
-    
-    @property
-    def tekst(self) -> str:
-        return self._tekst()
-    
-    @property
-    def tekst_links(self) -> str:
-        return self._tekst(links = True)
-    
-    @property
-    def volume(self) -> float | None:
-        if self.gewicht is None:
-            return None
-        return self.gewicht * self.repetities
-    
-    @property
-    def volume_links(self) -> float | None:
-        if self.gewicht is None:
-            return None
-        return self.gewicht * self.repetities_links
-    
-    @property
-    def e1rm(self) -> float | None:
-        if self.gewicht is None:
-            return None
-        return round(self.gewicht * (1 + self.repetities/30), 2)
-    
-    @property
-    def e1rm_links(self) -> float | None:
-        if self.gewicht is None:
-            return None
-        return round(self.gewicht * (1 + self.repetities_links/30), 2)
-
-@dataclass
-class ResultaatOefening:
-    
-    oefening: Oefening
-    sets: List[ResultaatSet]
-    
-    ONTCIJFERAAR: ClassVar[Ontcijferaar | None] = None
-    VERCIJFERAAR: ClassVar[Vercijferaar | None] = None
-    
     @classmethod
-    def van_sessie(
+    def openen(
         cls,
-        sessie_oefening: "SessieOefening",
-        ) -> "ResultaatOefening":
+        bestandspad: Path,
+        ) -> Resultaat:
+            
+            return openen_json(
+                bestandspad = bestandspad,
+                ontcijfer_functie_object = Resultaat.ONTCIJFERAAR_FUNCTIE,
+                ontcijfer_functie_subobjecten = [
+                    ResultaatOefening.ONTCIJFERAAR,
+                    ResultaatSet.ONTCIJFERAAR,
+                    ],
+                ontcijfer_enum = ENUMS,
+                )
+    
+    # INSTANCE METHODS
+    
+    def opslaan(self):
         
-        sets = []
-        
-        for sessie_setgroep in sessie_oefening.sets.values():
-            for sessie_set in sessie_setgroep:
-                if sessie_set.status == Status.AFGEROND and sessie_set.repetitie_gedaan > 0:
-                    resultaat_set = ResultaatSet.van_sessie(sessie_set)
-                    sets.append(resultaat_set)
-        
-        return cls(
-            oefening = sessie_oefening.oefening,
-            sets = sets,
+        opslaan_json(
+            object = self,
+            bestandspad = self.bestandspad,
+            vercijfer_functie_object = Resultaat.VERCIJFERAAR_FUNCTIE,
+            vercijfer_functie_subobjecten = [
+                ResultaatOefening.VERCIJFERAAR,
+                ResultaatSet.VERCIJFERAAR,
+                ],
+            vercijfer_enum = ENUMS,
             )
     
-    @classmethod
-    def van_json(
-        cls,
-        **dict,
-        ) -> "ResultaatOefening":
-        
-        return cls(**dict)
-    
     def naar_json(self) -> Dict[str, Any]:
+        
         return {
-            "oefening": self.oefening,
-            "sets": self.sets,
+            "schema_uuid": self.schema_uuid,
+            "week": self.week,
+            "dag": self.dag,
+            "datum": self.datum,
+            "oefeningen": self.oefeningen,
             }
     
-    def _tekst(self, links: bool = False) -> str:
-        
-        repetitie_veld = "repetities_links" if links else "repetities"
-        
-        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)) == 1 and len(set(getattr(resultaat_set, repetitie_veld) for resultaat_set in self.sets)) == 1:
-            if self.sets[0].gewicht is not None:
-                return f"{len(self.sets)}x{getattr(self.sets[0], repetitie_veld)}@{self.sets[0].gewicht}"
-            return f"{len(self.sets)}x{getattr(self.sets[0], repetitie_veld)}"
-        
-        if len(set(resultaat_set.gewicht for resultaat_set in self.sets)) == 1:
-            if self.sets[0].gewicht is not None:
-                return "(" + ", ".join(f"{getattr(resultaat_set, repetitie_veld)}" for resultaat_set in self.sets) + f")@{self.sets[0].gewicht}"
-            return  ", ".join(f"{getattr(resultaat_set, repetitie_veld)}" for resultaat_set in self.sets)
-        
-        if len(set(getattr(resultaat_set, repetitie_veld) for resultaat_set in self.sets)) == 1:
-            return f"{len(self.sets)}x{getattr(self.sets[0], repetitie_veld)}@(" + ", ".join(f"{resultaat_set.gewicht}" for resultaat_set in self.sets) + ")"
-        
-        return ", ".join(resultaat_set._tekst(links) for resultaat_set in self.sets)
-    
-    @property
-    def tekst(self) -> str:
-        return self._tekst()
-    
-    @property
-    def tekst_links(self) -> str:
-        return self._tekst(links = True)
-    
-    @property
-    def volume(self) -> float | None:
-        if self.oefening.gewichtloos:
-            return None
-        return sum(set.volume for set in self.sets)
-    
-    @property
-    def volume_links(self) -> float | None:
-        if self.oefening.gewichtloos:
-            return None
-        return sum(set.volume_links for set in self.sets)
-    
-    @property
-    def e1rm(self) -> float | None:
-        if self.oefening.gewichtloos:
-            return None
-        return max(set.e1rm for set in self.sets)
-    
-    @property
-    def e1rm_links(self) -> float | None:
-        if self.oefening.gewichtloos:
-            return None
-        return max(set.e1rm_links for set in self.sets)
+    # STATIC METHODS
     
     @staticmethod
     def tabel_recent(
@@ -268,113 +181,14 @@ class ResultaatOefening:
             resultaten_dict.pop("e1rm")
         
         return resultaten_dict
-
-@dataclass
-class Resultaat:
     
-    schema_uuid: str
-    week: int
-    dag: int
-    datum: dt.date
-    oefeningen: List[ResultaatOefening]
-    
-    ONTCIJFERAAR_FUNCTIE: ClassVar[Callable | None] = None
-    VERCIJFERAAR_FUNCTIE: ClassVar[Callable | None] = None
-    
-    @classmethod
-    def van_sessie(
-        cls,
-        sessie: "Sessie",
-        ) -> "Resultaat":
-        
-        oefeningen = []
-        
-        for sessie_oefening in sessie.oefeningen:
-            if any(sessie_set.status == Status.AFGEROND and sessie_set.repetitie_gedaan > 0 for sessie_setgroep in sessie_oefening.sets.values() for sessie_set in sessie_setgroep):
-                resultaat_oefening = ResultaatOefening.van_sessie(sessie_oefening)
-                oefeningen.append(resultaat_oefening)
-        
-        return cls(
-            schema_uuid = sessie.schema_uuid,
-            week = sessie.week,
-            dag = sessie.dag,
-            datum = sessie.datum,
-            oefeningen = oefeningen,
-            )
-    
-    @classmethod
-    def van_json(
-        cls,
-        **dict,
-        ) -> "Resultaat":
-        
-        return cls(**dict)
-    
-    @classmethod
-    def openen(
-        cls,
-        bestandspad: Path,
-        ) -> "Resultaat":
-            
-            return openen_json(
-                bestandspad = bestandspad,
-                ontcijfer_functie_object = Resultaat.ONTCIJFERAAR_FUNCTIE,
-                ontcijfer_functie_subobjecten = [
-                    ResultaatOefening.ONTCIJFERAAR,
-                    ResultaatSet.ONTCIJFERAAR,
-                    ],
-                ontcijfer_enum = ENUMS,
-                )
-    
-    def opslaan(self):
-        
-        opslaan_json(
-            object = self,
-            bestandspad = self.bestandspad,
-            vercijfer_functie_object = Resultaat.VERCIJFERAAR_FUNCTIE,
-            vercijfer_functie_subobjecten = [
-                ResultaatOefening.VERCIJFERAAR,
-                ResultaatSet.VERCIJFERAAR,
-                ],
-            vercijfer_enum = ENUMS,
-            )
-    
-    def naar_json(self) -> Dict[str, Any]:
-        
-        return {
-            "schema_uuid": self.schema_uuid,
-            "week": self.week,
-            "dag": self.dag,
-            "datum": self.datum,
-            "oefeningen": self.oefeningen,
-            }
+    # PROPERTIES
     
     @property
     def bestandspad(self) -> Path:
         return Path(f"gegevens\\sessies\\{self.datum.strftime("%Y-%m-%d")}.json")
 
-ResultaatSet.ONTCIJFERAAR = Ontcijferaar(
-    ontcijfer_functie = ResultaatSet.van_json,
-    velden = frozenset((
-        "repetities",
-        "repetities_links",
-        "gewicht",
-        ))
-    )
-ResultaatSet.VERCIJFERAAR = Vercijferaar(
-    class_naam = "ResultaatSet",
-    vercijfer_functie_naam = "naar_json",
-    )
-ResultaatOefening.ONTCIJFERAAR = Ontcijferaar(
-    ontcijfer_functie = ResultaatOefening.van_json,
-    velden = frozenset((
-        "oefening",
-        "sets",
-        ))
-    )
-ResultaatOefening.VERCIJFERAAR = Vercijferaar(
-    class_naam = "ResultaatOefening",
-    vercijfer_functie_naam = "naar_json",
-    )
+
+
 Resultaat.ONTCIJFERAAR_FUNCTIE = Resultaat.van_json
 Resultaat.VERCIJFERAAR_FUNCTIE = Resultaat.naar_json

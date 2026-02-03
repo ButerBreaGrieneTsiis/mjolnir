@@ -1,3 +1,4 @@
+"""mjolnir.kern.config"""
 from dotenv import dotenv_values
 
 

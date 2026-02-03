@@ -1,3 +1,5 @@
+"""mjolnir.sessie.functies"""
+from __future__ import annotations
 from contextlib import contextmanager
 from typing import Literal
 

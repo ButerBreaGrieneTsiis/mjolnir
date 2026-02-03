@@ -8,7 +8,7 @@ from grienetsiis.register import Register
 
 from mjolnir.kern import Setcode
 from mjolnir.kern.enums import ENUMS
-from mjolnir.schema import Schema, Sjabloon
+from mjolnir.schema import Sjabloon, Schema
 from mjolnir.sessie import Halterstang, Halterschijf, programma_sessie
 
 
@@ -45,16 +45,6 @@ Register.registreer_type(
     enums = ENUMS,
     )
 Register.registreer_type(
-    geregistreerd_type = Schema,
-    subregister_naam = "schema",
-    bestandsmap = Path("gegevens"),
-    bestandsnaam = "schema",
-    vercijfer_methode = "functie",
-    vercijfer_functie_objecten = Schema.naar_json,
-    ontcijfer_functie_objecten = Schema.van_json,
-    enums = ENUMS,
-    )
-Register.registreer_type(
     geregistreerd_type = Sjabloon,
     subregister_naam = "sjablonen",
     bestandsmap = Path("gegevens"),
@@ -76,5 +66,15 @@ Register.registreer_type(
             ontcijfer_functie = Setcode.van_json,
             ),
         ],
+    enums = ENUMS,
+    )
+Register.registreer_type(
+    geregistreerd_type = Schema,
+    subregister_naam = "schema",
+    bestandsmap = Path("gegevens"),
+    bestandsnaam = "schema",
+    vercijfer_methode = "functie",
+    vercijfer_functie_objecten = Schema.naar_json,
+    ontcijfer_functie_objecten = Schema.van_json,
     enums = ENUMS,
     )

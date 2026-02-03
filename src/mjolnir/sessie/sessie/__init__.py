@@ -1,14 +1,13 @@
 """
 Module mjolnir.sessie bevat alle functionaliteiten om een trainingssessie uit te voeren.
 """
-from .halter import Halterschijf, Halterstang
+from .sessie_set import SessieSet
+from .sessie_oefening import SessieOefening
 from .sessie import Sessie
-from .programma import programma_sessie
 
 
 __all__ = [
-    "Halterschijf",
-    "Halterstang",
+    "SessieSet",
+    "SessieOefening",
     "Sessie",
-    "programma_sessie",
     ]

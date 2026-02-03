@@ -1,3 +1,5 @@
+"""mjolnir.schema.schema"""
+from __future__ import annotations
 from dataclasses import dataclass
 import datetime as dt
 from typing import ClassVar, Dict, List
@@ -7,7 +9,7 @@ from grienetsiis.register import Register, GeregistreerdObject
 
 from mjolnir.kern import CONFIG
 from mjolnir.kern.enums import OefeningType, GewichtType, Oefening, Status, SetGroepType
-from mjolnir.schema.sjabloon import Sjabloon
+from mjolnir.schema import Sjabloon
 
 
 @dataclass
@@ -23,16 +25,20 @@ class Schema(GeregistreerdObject):
     trainingsgewichten: List[Dict[str, Oefening | float]] | None = None
     sessies: Dict[str, Dict[str, dt.date]] | None = None
     
-    BESTANDSNAAM: ClassVar[str] = "schema"
+    _SUBREGISTER_NAAM: ClassVar[str] = "schema"
+    
+    # DUNDER METHODS
     
     def __repr__(self) -> str:
         return f"{self.naam} ({self.status.value})"
+    
+    # CLASS METHODS
     
     @classmethod
     def nieuw(
         cls,
         velden,
-        ) -> "Schema":
+        ) -> Schema:
         
         schema = super().nieuw(velden)
         

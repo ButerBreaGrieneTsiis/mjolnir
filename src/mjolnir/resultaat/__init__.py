@@ -1,11 +1,13 @@
 """
 Module mjolnir.resultaat bevat alle functionaliteiten om afgeronde trainingssessies te inspecteren.
 """
-from .resultaat import Resultaat, ResultaatOefening, ResultaatSet
+from .resultaat_set import ResultaatSet
+from .resultaat_oefening import ResultaatOefening
+from .resultaat import Resultaat
 
 
 __all__ = [
-    "Resultaat",
-    "ResultaatOefening",
     "ResultaatSet",
+    "ResultaatOefening",
+    "Resultaat",
     ]
