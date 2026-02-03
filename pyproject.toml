@@ -1,14 +1,11 @@
 [project]
 name = "mjolnir"
-version = "1.0.0-rc2"
+version = "1.0.0"
 authors = [{name = "Tom Scheeper",email = "tomscheeper@gmail.com"}]
 dependencies = [
     "dotenv>=0.9.9",
-    "grienetsiis",
+    "grienetsiis @ git+https://github.com/ButerBreaGrieneTsiis/grienetsiis.git@v2.0.0-rc3",
     "keyboard>=0.13.5",
     "psutil>=7.2.2",
     "streamlit>=1.53.1",
 ]
-
-[tool.uv.sources]
-grienetsiis = { git = "https://github.com/ButerBreaGrieneTsiis/grienetsiis", rev = "v2.0.0-rc3" }
