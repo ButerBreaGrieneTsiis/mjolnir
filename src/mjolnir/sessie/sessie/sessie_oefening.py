@@ -8,7 +8,7 @@ import streamlit as st
 
 from mjolnir.kern.enums import Oefening, SetType, SetGroepType
 from mjolnir.sessie.sessie import SessieSet
-from mjolnir.resultaat import ResultaatOefening
+from mjolnir.resultaat import Resultaat
 
 
 @dataclass
@@ -165,7 +165,7 @@ class SessieOefening:
         ):
         
         if f"recent_resultaat_{self.oefening.naam_underscore}" not in st.session_state:
-            st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"] = ResultaatOefening.tabel_recent(self.oefening, 5)
+            st.session_state[f"recent_resultaat_{self.oefening.naam_underscore}"] = Resultaat.tabel_recent(self.oefening, 5)
         
         expander = kolom.expander(
             label = f"recente resultaten {self.oefening.naam}",
