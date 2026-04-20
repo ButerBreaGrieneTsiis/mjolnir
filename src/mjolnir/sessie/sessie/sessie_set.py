@@ -102,12 +102,12 @@ class SessieSet:
             max_repetities = self.repetitie_aantal
             aantal_repetities = self.repetitie_aantal
         elif self.repetitie_type == RepetitieType.BEREIK:
-            max_repetities = self.repetitie_aantal[1]
-            aantal_repetities = self.repetitie_aantal[1]
+            max_repetities = self.repetitie_maximaal
+            aantal_repetities = self.repetitie_maximaal
         else:
             max_repetities = CONFIG["REPETITIE_AANTAL_MAX"]
             if self.repetitie_type == RepetitieType.BEREIK_AMRAP:
-                aantal_repetities = self.repetitie_aantal[1]
+                aantal_repetities = self.repetitie_maximaal
             else:
                 aantal_repetities = self.repetitie_aantal
         
