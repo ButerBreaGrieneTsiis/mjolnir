@@ -14,20 +14,20 @@ def programma_sessie():
     st.markdown(
         """
         <style>
-            .block-container {{
+            .block-container {
                 padding-top: 0.0rem;
                 padding-bottom: 0rem;
                 padding-left: 2rem;
                 padding-right: 2rem;
-                }}
+                }
             
-            .stVerticalBlock {{
+            .stVerticalBlock {
                 gap: 2px;
-                }}
+                }
             
-            header {{visibility: hidden;}}
+            header {visibility: hidden;}
             
-            .main {{overflow: hidden}}
+            .main {overflow: hidden}
         </style>
         """,
         unsafe_allow_html = True,
