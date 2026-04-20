@@ -37,8 +37,14 @@ class Halterstang(GeregistreerdObject):
         for gewicht_set in gewicht_per_set:
             
             gewicht_per_kant = round((gewicht_set - self.massa)/2/min(halterschijven_per_kant))*min(halterschijven_per_kant)
+            
+            if gewicht_per_kant_per_set and gewicht_per_kant == gewicht_per_kant_per_set[-1]["gewicht"]:
+                gewicht_per_kant_per_set[-1]["aantal"] += 1
+                continue
+            
             gewicht_per_kant_dict = {
                 "gewicht": gewicht_per_kant,
+                "aantal": 1,
                 "permutaties": [],
                 "permutaties_filter": [],
                 }
@@ -111,15 +117,17 @@ class Halterstang(GeregistreerdObject):
         # halters laden
         halters = []
         
-        for gewichten_per_kant in volgorde_optimaal:
+        for gewichten_per_kant, gewicht_per_kant_dict in zip(volgorde_optimaal, gewicht_per_kant_per_set):
             
-            halterschijven_per_kant = []
-            for gewicht_per_kant in gewichten_per_kant[1:]:
-                halterschijf = next(halterschijf for halterschijf in halterschijven if halterschijf.massa == gewicht_per_kant)
-                halterschijven_per_kant.append(halterschijf)
+            for _ in range(gewicht_per_kant_dict["aantal"]):
             
-            halter = Halter(self, halterschijven_per_kant, halterschijven_per_kant)
-            halters.append(halter)
+                halterschijven_per_kant = []
+                for gewicht_per_kant in gewichten_per_kant[1:]:
+                    halterschijf = next(halterschijf for halterschijf in halterschijven if halterschijf.massa == gewicht_per_kant)
+                    halterschijven_per_kant.append(halterschijf)
+                
+                halter = Halter(self, halterschijven_per_kant, halterschijven_per_kant)
+                halters.append(halter)
         
         return halters
     
