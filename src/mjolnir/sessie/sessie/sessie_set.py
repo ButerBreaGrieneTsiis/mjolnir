@@ -183,12 +183,12 @@ class SessieSet:
             else:
                 st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f"set {self.set_nummer}: {self.repetitie_tekst}@{self.gewicht_tekst}"
         else:
-            if self.status == Status.AFGEROND:
+            if self.status == Status.AFGEROND and self.repetitie_gedaan > 0:
                 if self.oefening.gewichtloos:
                     st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.repetitie_gedaan} ({self.repetitie_tekst})"
                 else:
                     st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":white_check_mark: set {self.set_nummer}: {self.repetitie_gedaan}@{self.gewicht_gedaan} ({self.repetitie_tekst}@{self.gewicht_tekst})"
-            if self.status == Status.AFGEBROKEN:
+            if self.status == Status.AFGEBROKEN or (self.status == Status.AFGEROND and self.repetitie_gedaan == 0):
                 if self.oefening.gewichtloos:
                     st.session_state[f"label_{self.oefening.naam_underscore}_{self.set_nummer}"] = f":heavy_multiplication_x: set {self.set_nummer}: {self.repetitie_tekst}"
                 else:
