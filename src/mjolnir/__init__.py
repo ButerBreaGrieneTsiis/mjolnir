@@ -17,7 +17,7 @@ __all__ = [
     "programma_sessie",
     ]
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 Register.instellen(
     registratie_methode = "uuid",
