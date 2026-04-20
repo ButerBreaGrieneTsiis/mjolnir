@@ -21,6 +21,10 @@ def programma_sessie():
                 padding-right: 2rem;
                 }}
             
+            .stVerticalBlock {{
+                gap: 2px;
+                }}
+            
             header {{visibility: hidden;}}
             
             .main {{overflow: hidden}}
