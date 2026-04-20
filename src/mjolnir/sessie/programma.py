@@ -12,7 +12,7 @@ st.set_page_config(layout = "wide")
 def programma_sessie():
     
     st.markdown(
-        f"""
+        """
         <style>
             .block-container {{
                 padding-top: 0.0rem;
